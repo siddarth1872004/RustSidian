@@ -6,6 +6,7 @@ pub mod editing;
 pub mod graphview;
 pub mod media;
 pub mod properties;
+pub mod rich;
 pub mod settings;
 pub mod shell;
 pub mod view;
@@ -33,6 +34,7 @@ pub fn render(app: &mut App, fonts: &mut Fonts, pixmap: &mut Pixmap, scale: f32)
     view::add_carets(app, &mut dom, &info, fonts);
     view::add_graph(app, &mut dom, &info);
     canvasview::add_canvas(app, &mut dom, &info);
+    rich::paint(&mut dom, &info.rich, fonts);
     let scene = dom.paint();
     let clear = dom.nodes[0].style.background;
     walnut_ui::render(&scene, fonts, pixmap, scale, clear);

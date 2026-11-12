@@ -52,7 +52,9 @@ were not started; steps 9 and 11 are partial.
 | theme-engine | done (engine) | Parser, selectors, cascade, `var()`, `calc()`, media queries, shorthands, transitions (parse + easing), inspector; 15 unit tests + never-panic property tests (40k cases). Supported/unsupported subset is listed in the crate docs. Loading `.obsidian/themes` and snippets with live reload is app-layer work. |
 | canvas-core | done | JSON Canvas parse/edit/write with lossless round trip (unknown fields, key order, Obsidian's layout); 3 tests. View in `app/canvasview.rs`. |
 | bases-core | not started | Crate does not exist. |
-| mermaid-core | not started | Crate does not exist. No Rust Mermaid crates were evaluated. |
+| mermaid-core | partial | Flowchart and sequence diagrams with own layered layout, painted with display-list commands; 10 tests. Other diagram types show their source. |
+| math-core | partial | LaTeX subset to a box layout, painted with display-list commands; 12 tests. |
+| highlight-core | done | Hand-written tokenizer for the common languages; 8 tests. |
 | ext-api | not started | Commands have stable ids inside `app`, but there is no extension API and core features are not modules behind one. |
 | plugin-host-wasm | not started | Crate does not exist. |
 | compat-js | not started | Only the engine spike (DECISIONS.md §3). |
@@ -73,10 +75,10 @@ The machine this was developed on has no C compiler, no `pkg-config` and no root
 ## What is left, in suggested order
 
 1. Done: lazy metadata decode from the mapped index (idle RAM 34 MB, see DECISIONS §9).
-2. Done in part: quote, callout, table, note-embed and PNG image widgets. Left: other image formats, math, Mermaid, measured table columns.
+2. Done in part: quote, callout, table, note-embed and PNG image widgets. Math and Mermaid are done in part (see the status rows). Left: other image formats, measured table columns, inline math in the text flow.
 3. Done: folding, table editing and vim keys wired into the editor.
 3b. Graph view: done on the CPU rasterizer (30 fps at 50k nodes; `wgpu` still needed for 60). Canvas view: done on the CPU rasterizer (pan, zoom, move, resize, edit text, save).
 4. `ext-api`, then move built-in features behind it; scripting; `plugin-host-wasm`.
-5. `mermaid-core`, math rendering, syntax highlighting, PDF.
+5. PDF; more Mermaid diagram types and LaTeX coverage.
 6. `compat-js` and the compatibility harness.
 7. Windows build and test, packaging, running the CI workflow for the first time.

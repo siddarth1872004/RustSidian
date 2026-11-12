@@ -292,6 +292,60 @@ fn block_widgets() {
     assert!(frame.info.blocks.iter().any(|b| b.display == "y z"));
 }
 
+#[test]
+fn code_blocks_are_highlighted() {
+    let (_d, mut app) = note("intro\n\n```rust\nfn main() { let s = \"x\"; } // c\n```\n", "{}");
+    cursor_at(&mut app, "intro");
+    let mut fonts = Fonts::new();
+    let mut pm = Pixmap::new(900, 700).unwrap();
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    let block = frame.info.blocks.iter().find(|b| b.display.contains("fn main")).unwrap();
+    let spans = &frame.dom.nodes[block.node].el.spans;
+    let mut colors: Vec<_> = spans.iter().filter_map(|s| s.color).map(|c| (c.r, c.g, c.b)).collect();
+    colors.sort_unstable();
+    colors.dedup();
+    assert!(colors.len() >= 4, "{colors:?}");
+}
+
+#[test]
+fn math_blocks_are_typeset_and_editable() {
+    let (_d, mut app) = note("intro\n\n$$\n\\frac{a}{b}\n$$\n\nAfter $x^2$ here.\n", "{}");
+    cursor_at(&mut app, "intro");
+    let mut fonts = Fonts::new();
+    let mut pm = Pixmap::new(900, 700).unwrap();
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert_eq!(frame.info.rich.len(), 2);
+    for it in &frame.info.rich {
+        assert!(!frame.dom.nodes[it.node].draw.is_empty());
+    }
+    let block = &frame.info.rich[0];
+    let r = frame.dom.content_rect(block.node);
+    assert!(r.h > 30.0);
+    app.click(&frame, &mut fonts, r.x + r.w / 2.0, r.y + r.h / 2.0, false);
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert!(frame.info.blocks.iter().any(|b| b.display.contains("\\frac{a}{b}")));
+    assert_eq!(frame.info.rich.len(), 1);
+}
+
+#[test]
+fn mermaid_blocks_are_drawn_or_explained() {
+    let src = "intro\n\n```mermaid\ngraph LR\n  A --> B\n```\n\n```mermaid\npie title x\n  \"a\": 1\n```\n";
+    let (_d, mut app) = note(src, "{}");
+    cursor_at(&mut app, "intro");
+    let mut fonts = Fonts::new();
+    let mut pm = Pixmap::new(900, 900).unwrap();
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert_eq!(frame.info.rich.len(), 1);
+    assert!(frame.dom.nodes[frame.info.rich[0].node].draw.len() > 5);
+    let texts: Vec<&str> = frame.dom.nodes.iter().filter_map(|n| n.el.text.as_deref()).collect();
+    assert!(texts.iter().any(|t| t.contains("`pie` diagrams are not supported")), "{texts:?}");
+    assert!(frame.info.blocks.iter().any(|b| b.display.contains("pie title x")));
+    // Source mode shows the fence untouched.
+    app.tabs[0].mode = ViewMode::Source;
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert!(frame.info.rich.is_empty());
+}
+
 fn tiny_skia_color(r: u8, g: u8, b: u8) -> walnut_ui::SkColor {
     walnut_ui::SkColor::from_rgba8(r, g, b, 255)
 }
