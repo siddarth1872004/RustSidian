@@ -1,0 +1,11 @@
+[package]
+name = "highlight-core"
+description = "Dependency-free syntax tokenizer for fenced code blocks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]

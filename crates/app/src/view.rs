@@ -22,6 +22,8 @@ pub struct Palette {
     pub caret: Color,
     pub tag: Color,
     pub heading_scale: [f32; 6],
+    /// Syntax colors indexed by `highlight_core::Class as usize`.
+    pub syntax: [Color; 14],
 }
 
 struct Body(bool);
@@ -62,7 +64,44 @@ pub fn palette(app: &App) -> Palette {
     let num = |name: &str, default: f32| {
         c.var(name).and_then(|v| v.trim().trim_end_matches("em").parse().ok()).unwrap_or(default)
     };
+    let syn = |name: &str, dark: (u8, u8, u8), light: (u8, u8, u8)| {
+        let d = if app.dark { dark } else { light };
+        col(name, Color::rgb(d.0, d.1, d.2))
+    };
+    let kw = syn("--code-keyword", (224, 108, 155), (170, 40, 100));
+    let string = syn("--code-string", (140, 200, 120), (30, 120, 50));
+    let comment = syn("--code-comment", (120, 120, 120), (140, 140, 140));
+    let value = syn("--code-value", (170, 130, 240), (110, 60, 190));
+    let func = syn("--code-function", (225, 200, 100), (150, 110, 10));
+    let important = syn("--code-important", (235, 150, 80), (190, 90, 20));
+    let property = syn("--code-property", (90, 200, 215), (10, 120, 150));
+    let tag = syn("--code-tag", (230, 100, 100), (190, 40, 40));
+    let operator = syn("--code-operator", (200, 130, 190), (150, 70, 140));
+    let red = syn("--color-red", (230, 100, 100), (190, 40, 40));
+    let mut syntax = [kw; 14];
+    {
+        use highlight_core::Class as K;
+        for (k, v) in [
+            (K::Keyword, kw),
+            (K::String, string),
+            (K::Comment, comment),
+            (K::Number, value),
+            (K::Function, func),
+            (K::Type, important),
+            (K::Property, property),
+            (K::Tag, tag),
+            (K::Operator, operator),
+            (K::Important, important),
+            (K::Constant, value),
+            (K::Variable, property),
+            (K::Inserted, string),
+            (K::Deleted, red),
+        ] {
+            syntax[k as usize] = v;
+        }
+    }
     Palette {
+        syntax,
         accent: col("--text-accent", Color::rgb(138, 92, 245)),
         muted: col("--text-muted", Color::rgb(150, 150, 150)),
         faint: col("--text-faint", Color::rgb(110, 110, 110)),
@@ -127,6 +166,47 @@ pub struct ViewInfo {
     /// The graph pane and the hidden elements its colors are read from.
     pub graph: Option<NodeId>,
     pub graph_colors: Vec<NodeId>,
+}
+
+/// Syntax-highlight spans for a fenced code block, appended to `spans`. `map` is the
+/// (source offset, display offset, length) mapping of the block's displayed segments.
+fn code_spans(
+    tree: &md_engine::Tree,
+    block_start: usize,
+    src: &str,
+    src_start: usize,
+    map: &[(usize, usize, usize)],
+    pal: &Palette,
+    spans: &mut Vec<Span>,
+) {
+    const MAX: usize = 256 * 1024;
+    let root = tree.root();
+    let NodeKind::CodeBlock { info, content, .. } = root.kind else { return };
+    let (cs, ce) = (block_start + content.start as usize, block_start + content.end as usize);
+    let (Some(text), Some(info)) =
+        (src.get(cs.saturating_sub(src_start)..ce.saturating_sub(src_start)), src.get(
+            (block_start + info.start as usize).saturating_sub(src_start)..(block_start + info.end as usize).saturating_sub(src_start),
+        ))
+    else {
+        return;
+    };
+    if text.is_empty() || text.len() > MAX || cs < src_start {
+        return;
+    }
+    let toks = highlight_core::highlight_cached(&highlight_core::lang_of_info(info), text);
+    let conv = |abs: usize| {
+        map.iter().find(|&&(s, _, len)| abs >= s && abs <= s + len).map(|&(s, d, _)| d + abs - s)
+    };
+    spans.retain(|s| s.color.is_some() || s.bold || s.italic || s.background.is_some());
+    for t in toks.iter() {
+        if let (Some(a), Some(b)) = (conv(cs + t.start), conv(cs + t.end)) {
+            if b > a {
+                let c = pal.syntax[t.class as usize];
+                spans.push(Span { start: a, end: b, color: Some(c), scale: 1.0, ..Span::default() });
+            }
+        }
+    }
+    spans.sort_by_key(|s| s.start);
 }
 
 /// Turn a block's source and decorations into display text and styled spans.
@@ -450,6 +530,7 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
             let c = callout_color(&kind);
             el = el.style(&format!("border-left-color: rgb({},{},{})", c.r, c.g, c.b));
         }
+        code_spans(&b.tree, b.start, &src, s, &bv.map, pal, &mut spans);
         bv.node = dom.add(view, el.spans(spans));
         if matches!(root.kind, NodeKind::Heading { level, .. } if level > 0) {
             let folded = tab.folds.is_folded(b.start);
@@ -606,7 +687,8 @@ fn embedded_blocks(dom: &mut Dom, parent: NodeId, text: &str, action: &str, pal:
         if class.ends_with("cm-quote") {
             hide_quote_markers(src, s, &mut block_decos);
         }
-        let (display, spans, _) = block_display(src, s, &block_decos, pal);
+        let (display, mut spans, map) = block_display(src, s, &block_decos, pal);
+        code_spans(&b.tree, b.start, src, s, &map, pal, &mut spans);
         dom.add(parent, El::div().class(class).text(display).spans(spans).action(action));
     }
     if doc.blocks.len() > n {

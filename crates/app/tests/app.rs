@@ -292,6 +292,21 @@ fn block_widgets() {
     assert!(frame.info.blocks.iter().any(|b| b.display == "y z"));
 }
 
+#[test]
+fn code_blocks_are_highlighted() {
+    let (_d, mut app) = note("intro\n\n```rust\nfn main() { let s = \"x\"; } // c\n```\n", "{}");
+    cursor_at(&mut app, "intro");
+    let mut fonts = Fonts::new();
+    let mut pm = Pixmap::new(900, 700).unwrap();
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    let block = frame.info.blocks.iter().find(|b| b.display.contains("fn main")).unwrap();
+    let spans = &frame.dom.nodes[block.node].el.spans;
+    let mut colors: Vec<_> = spans.iter().filter_map(|s| s.color).map(|c| (c.r, c.g, c.b)).collect();
+    colors.sort_unstable();
+    colors.dedup();
+    assert!(colors.len() >= 4, "{colors:?}");
+}
+
 fn tiny_skia_color(r: u8, g: u8, b: u8) -> walnut_ui::SkColor {
     walnut_ui::SkColor::from_rgba8(r, g, b, 255)
 }

@@ -702,6 +702,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e17592d60ebacc7d5e169f4663c5f84f9161cc90328abcfe8456f41e4dfcb284"
 
 [[package]]
+name = "highlight-core"
+version = "0.1.0"
+
+[[package]]
 name = "indexmap"
 version = "2.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -907,6 +911,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
+name = "math-core"
+version = "0.1.0"
+
+[[package]]
 name = "md-engine"
 version = "0.1.0"
 dependencies = [
@@ -928,6 +936,10 @@ checksum = "6b0ca1155a9ecc25aa12e8313a119f32edf0255fea2f44839c4ac0a12b2ac157"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "mermaid-core"
+version = "0.1.0"
 
 [[package]]
 name = "miniz_oxide"
@@ -2233,6 +2245,7 @@ version = "0.1.0"
 dependencies = [
  "editor-core",
  "graph-core",
+ "highlight-core",
  "md-engine",
  "search-core",
  "serde_json",
