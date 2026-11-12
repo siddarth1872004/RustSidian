@@ -745,6 +745,12 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
             El::div().class("side-dock-ribbon-action").class_if(active, "is-active").text(glyph).action(cmd),
         );
     }
+    for r in &app.plugins.ext.reg.ribbon {
+        dom.add(
+            ribbon,
+            El::div().class("side-dock-ribbon-action").text(r.icon.clone()).action(r.command.clone()),
+        );
+    }
     if app.left_open {
         let left = dom.add(ws, El::div().class("workspace-split mod-left-split"));
         match app.panel {
@@ -803,6 +809,9 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
                 .class("status-bar-item")
                 .text(format!("{} characters", t.editor.buf.rope().len_chars())),
         );
+    }
+    for s in &app.plugins.ext.reg.status {
+        dom.add(status, El::div().class("status-bar-item").text(s.text.clone()));
     }
     dom.add(
         status,

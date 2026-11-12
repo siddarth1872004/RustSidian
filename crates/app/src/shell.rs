@@ -166,6 +166,8 @@ pub const COMMANDS: &[(&str, &str, &str)] = &[
     ("theme:toggle-light-dark", "Toggle light/dark mode", ""),
     ("app:reload-theme", "Reload themes and snippets", ""),
     ("app:toggle-perf-overlay", "Toggle performance overlay", "Ctrl+Shift+F12"),
+    ("plugins:list", "Plugins: List plugins and scripts", ""),
+    ("plugins:reload", "Plugins: Reload plugins", ""),
     ("app:quit", "Quit", "Ctrl+Q"),
 ];
 
@@ -299,6 +301,7 @@ pub struct App {
     pub scrolls: HashMap<String, f32>,
     fuzzy: Fuzzy,
     recovery: Recovery,
+    pub plugins: crate::plugins::PluginState,
 }
 
 /// Sort key for explorer order: at each level folders come before files, and names compare
@@ -411,6 +414,7 @@ impl App {
             quit: false,
             scrolls: HashMap::new(),
             fuzzy: Fuzzy::new(),
+            plugins: Default::default(),
         })
     }
 
@@ -565,6 +569,7 @@ impl App {
         }
         self.focus = Focus::Editor;
         self.show_graph = false;
+        self.plugins.push(ext_api::Event::FileOpen { path: rel.clone() });
         if record {
             self.history.truncate(self.history_pos + usize::from(!self.history.is_empty()));
             if self.history.last() != Some(&rel) {
@@ -585,6 +590,7 @@ impl App {
             Ok(stamp) => {
                 tab.stamp = stamp;
                 tab.editor.buf.mark_saved();
+                self.plugins.push(ext_api::Event::Modify { path: tab.path.clone() });
                 let _ = self.recovery.snapshot(&tab.path, &text, fsio::now_ms());
                 if let Some(c) = &mut self.corpus {
                     if let Some(id) = self.store.index.id(&tab.path) {
@@ -675,17 +681,21 @@ impl App {
         let query = self.prompt.as_ref().map(|p| p.query.clone()).unwrap_or_default();
         let items: Vec<PromptItem> = match kind {
             PromptKind::Commands => {
-                let names: Vec<&str> = COMMANDS.iter().map(|c| c.1).collect();
+                let extra = self.plugin_palette();
+                let names: Vec<&str> =
+                    COMMANDS.iter().map(|c| c.1).chain(extra.iter().map(|c| c.1.as_str())).collect();
                 self.fuzzy
                     .top(&query, &names, 12)
                     .iter()
                     .map(|h| {
-                        let (id, name, _) = COMMANDS[h.index];
-                        PromptItem {
-                            label: name.to_string(),
-                            aux: self.hotkey_for(id),
-                            action: id.to_string(),
-                        }
+                        let (id, name) = match COMMANDS.get(h.index) {
+                            Some((id, name, _)) => (*id, name.to_string()),
+                            None => {
+                                let c = &extra[h.index - COMMANDS.len()];
+                                (c.0.as_str(), c.1.clone())
+                            }
+                        };
+                        PromptItem { label: name, aux: self.hotkey_for(id), action: id.to_string() }
                     })
                     .collect()
             }
@@ -792,6 +802,7 @@ impl App {
                     self.notice = Some(format!("Cannot create {rel}: {e}"));
                     return;
                 }
+                self.plugins.push(ext_api::Event::Create { path: rel.clone() });
             }
             return self.open_note(&rel);
         }
@@ -818,6 +829,9 @@ impl App {
             self.close_prompt();
         }
         if command == "prompt:dismiss" {
+            return;
+        }
+        if self.run_plugin_command(command) {
             return;
         }
         let wrap = |app: &mut App, marker: &str| {
@@ -924,6 +938,7 @@ impl App {
                 if let Some(p) = self.tab().map(|t| t.path.clone()) {
                     match self.store.delete(&p) {
                         Ok(_) => {
+                            self.plugins.push(ext_api::Event::Delete { path: p.clone() });
                             self.tabs.remove(self.active);
                             self.active = self.active.min(self.tabs.len().saturating_sub(1));
                             self.notice = Some(format!("Moved {p} to trash"));

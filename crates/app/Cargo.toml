@@ -28,6 +28,7 @@ graph-core = { path = "../graph-core" }
 editor-core = { path = "../editor-core" }
 theme-engine = { path = "../theme-engine" }
 walnut-ui = { path = "../walnut-ui" }
+ext-api = { path = "../ext-api" }
 serde_json = { version = "1", features = ["preserve_order"] }
 winit = { version = "0.30", optional = true, default-features = false, features = ["x11", "wayland", "wayland-dlopen", "rwh_06"] }
 softbuffer = { version = "0.4", optional = true, default-features = false, features = ["x11", "x11-dlopen", "wayland", "wayland-dlopen"] }

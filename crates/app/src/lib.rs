@@ -4,6 +4,7 @@ pub mod cli;
 pub mod editing;
 pub mod graphview;
 pub mod media;
+pub mod plugins;
 pub mod shell;
 pub mod view;
 
@@ -22,6 +23,7 @@ pub struct Frame {
 /// Build, style, lay out and paint the window into `pixmap`.
 pub fn render(app: &mut App, fonts: &mut Fonts, pixmap: &mut Pixmap, scale: f32) -> Frame {
     let t = Instant::now();
+    app.pump_plugins();
     app.refresh_derived();
     let (mut dom, info) = view::build(app, pixmap.height() as f32 / scale);
     let env = Env { dark: app.dark, reduced_motion: false };

@@ -1,0 +1,16 @@
+[package]
+name = "ext-api"
+description = "Rustwalnut extension API: one JSON call boundary shared by WASM, script and JS hosts"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[dev-dependencies]
+tempfile = "3"
