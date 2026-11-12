@@ -87,7 +87,7 @@ pub fn generic(sp: &Spec, src: &str, base: usize, out: &mut Vec<Token>) {
                 continue;
             }
         }
-        if sp.line.iter().any(|p| sw(src, i, *p)) && comment_ok(sp, b, i) {
+        if sp.line.iter().any(|p| sw(src, i, p)) && comment_ok(sp, b, i) {
             let e = src[i..].find('\n').map_or(n, |x| i + x);
             push(out, base, i, e, Class::Comment);
             i = e;
@@ -121,11 +121,9 @@ pub fn generic(sp: &Spec, src: &str, base: usize, out: &mut Vec<Token>) {
             let hex = c == b'0' && matches!(b.get(i + 1), Some(b'x' | b'X'));
             while e < n {
                 let d = b[e];
-                if d.is_ascii_alphanumeric() || d == b'_' {
-                    e += 1;
-                } else if d == b'.' && b.get(e + 1).is_some_and(u8::is_ascii_digit) {
-                    e += 1;
-                } else if (d == b'+' || d == b'-') && !hex && matches!(b[e - 1], b'e' | b'E') {
+                let frac = d == b'.' && b.get(e + 1).is_some_and(u8::is_ascii_digit);
+                let sign = (d == b'+' || d == b'-') && !hex && matches!(b[e - 1], b'e' | b'E');
+                if d.is_ascii_alphanumeric() || d == b'_' || frac || sign {
                     e += 1;
                 } else {
                     break;

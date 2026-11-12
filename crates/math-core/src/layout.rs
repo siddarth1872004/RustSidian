@@ -96,6 +96,7 @@ impl B {
 struct St {
     size: f32,
     display: bool,
+    script: bool,
 }
 
 const AXIS: f32 = 0.25;
@@ -184,12 +185,8 @@ impl Ctx<'_> {
             {
                 k = Kind::Ord;
             }
-            if st.size >= 0.0 && !(st.size < 0.0) {
-                if let Some(p) = prev {
-                    if st.display || st.size > 0.0 {
-                        x += gap(p, k) * st.size * if st.display { 1.0 } else { 1.0 };
-                    }
-                }
+            if let (Some(p), false) = (prev, st.script) {
+                x += gap(p, k) * st.size;
             }
             let b = self.node(n, st);
             out.a = out.a.max(b.a);
@@ -270,7 +267,7 @@ impl Ctx<'_> {
     }
 
     fn sub_st(&self, st: St) -> St {
-        St { size: (st.size * 0.7).max(5.0), display: false }
+        St { size: (st.size * 0.7).max(5.0), display: false, script: true }
     }
 
     fn script(&mut self, base: &Node, sup: Option<&[Node]>, sub: Option<&[Node]>, st: St) -> B {
@@ -352,9 +349,9 @@ impl Ctx<'_> {
     fn frac(&mut self, num: &[Node], den: &[Node], rule: bool, display: bool, st: St) -> B {
         let s = st.size;
         let inner = if display {
-            St { size: s, display: false }
+            St { size: s, display: false, script: false }
         } else {
-            St { size: (s * 0.78).max(5.0), display: false }
+            St { size: (s * 0.78).max(5.0), display: false, script: false }
         };
         let n = self.list(num, inner);
         let d = self.list(den, inner);
@@ -385,7 +382,7 @@ impl Ctx<'_> {
         let mut out = B::default();
         let mut x0 = 0.0;
         if let Some(i) = index {
-            let sst = St { size: (s * 0.55).max(5.0), display: false };
+            let sst = St { size: (s * 0.55).max(5.0), display: false, script: true };
             let ib = self.list(i, sst);
             x0 = (ib.w - 0.25 * rw).max(0.0);
             let iw = ib.w;
@@ -442,7 +439,7 @@ impl Ctx<'_> {
 
     fn matrix(&mut self, rows: &[Vec<Vec<Node>>], align: Align, open: &str, st: St) -> B {
         let s = st.size;
-        let cst = St { size: s, display: false };
+        let cst = St { size: s, display: false, script: false };
         let cells: Vec<Vec<B>> = rows
             .iter()
             .map(|r| {
@@ -474,7 +471,7 @@ impl Ctx<'_> {
                 Align::Center => 1.0 * s,
                 Align::Aligned if cases => 1.0 * s,
                 Align::Aligned => {
-                    if j % 2 == 0 {
+                    if j.is_multiple_of(2) {
                         0.0
                     } else {
                         2.0 * s
@@ -629,7 +626,7 @@ impl Ctx<'_> {
 
 pub fn layout(nodes: &[Node], size: f32, display: bool, m: &mut dyn Measure) -> Layout {
     let mut cx = Ctx { m };
-    let b = cx.list(nodes, St { size, display });
+    let b = cx.list(nodes, St { size, display, script: false });
     let (a, d) = (b.a.max(0.7 * size), b.d.max(0.2 * size));
     let mut l = Layout { width: b.w, ascent: a, descent: d, ..Layout::default() };
     l.glyphs =

@@ -91,6 +91,7 @@ body {
 .cm-line.cm-callout { background-color: var(--background-primary-alt); border-left: 3px solid var(--interactive-accent); margin: 0 48px 6px 48px; padding: 8px 14px; border-radius: var(--radius-s) }
 .cm-line.cm-frontmatter { color: var(--text-faint); font-family: monospace; font-size: 13px; background-color: var(--background-primary-alt); margin: 0 48px 10px 48px; padding: 8px 14px; border-radius: var(--radius-s) }
 .cm-line.cm-hr { height: 1px; background-color: var(--background-modifier-border); margin: 12px 48px; padding: 0 }
+.rich-notice { font-size: 12px; color: var(--text-faint); padding: 0 62px; margin: -2px 0 8px 0 }
 .cm-fold-indicator { position: absolute; left: 24px; top: 7px; width: 18px; color: var(--text-faint); font-size: 13px; font-weight: 400 }
 .cm-fold-indicator:hover, .cm-fold-indicator.is-collapsed { color: var(--text-muted) }
 .markdown-table { margin: 0 48px 10px 48px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); font-size: var(--font-text-size); color: var(--text-normal); overflow: hidden }

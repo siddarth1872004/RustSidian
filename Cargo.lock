@@ -2248,6 +2248,7 @@ dependencies = [
  "highlight-core",
  "math-core",
  "md-engine",
+ "mermaid-core",
  "search-core",
  "serde_json",
  "softbuffer",

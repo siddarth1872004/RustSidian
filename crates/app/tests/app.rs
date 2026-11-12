@@ -327,6 +327,25 @@ fn math_blocks_are_typeset_and_editable() {
     assert_eq!(frame.info.rich.len(), 1);
 }
 
+#[test]
+fn mermaid_blocks_are_drawn_or_explained() {
+    let src = "intro\n\n```mermaid\ngraph LR\n  A --> B\n```\n\n```mermaid\npie title x\n  \"a\": 1\n```\n";
+    let (_d, mut app) = note(src, "{}");
+    cursor_at(&mut app, "intro");
+    let mut fonts = Fonts::new();
+    let mut pm = Pixmap::new(900, 900).unwrap();
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert_eq!(frame.info.rich.len(), 1);
+    assert!(frame.dom.nodes[frame.info.rich[0].node].draw.len() > 5);
+    let texts: Vec<&str> = frame.dom.nodes.iter().filter_map(|n| n.el.text.as_deref()).collect();
+    assert!(texts.iter().any(|t| t.contains("`pie` diagrams are not supported")), "{texts:?}");
+    assert!(frame.info.blocks.iter().any(|b| b.display.contains("pie title x")));
+    // Source mode shows the fence untouched.
+    app.tabs[0].mode = ViewMode::Source;
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert!(frame.info.rich.is_empty());
+}
+
 fn tiny_skia_color(r: u8, g: u8, b: u8) -> walnut_ui::SkColor {
     walnut_ui::SkColor::from_rgba8(r, g, b, 255)
 }

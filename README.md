@@ -6,8 +6,8 @@ extra data in `.walnut/`.
 
 **Status: partial.** The headless core (Markdown, vault index, search, graph model, editor model,
 CSS engine, JSON Canvas) and a working desktop shell are implemented and tested. Large parts of
-the original specification are **not implemented**: plugins (WASM and JS), Mermaid, Bases,
-scripting, math and PDF rendering, the canvas view, packaging. The checklist below is
+the original specification are **not implemented**: plugins (WASM and JS), Bases,
+scripting, PDF rendering, the canvas view, packaging. The checklist below is
 the authoritative list; nothing outside it is claimed.
 
 ## Build and run
@@ -42,7 +42,7 @@ Synthetic vaults from `perf_budget`.
 | Full-text search, 50,000 notes | first results < 30 ms | 8–31 ms depending on query; `line:` queries sit at 29–31 ms | met, except `line:` which is on the line |
 | Quick switcher, 50,000 paths | < 5 ms per keystroke | 1.8–2.0 ms | met |
 | Graph, 50,000 nodes at 60 fps | pan/zoom | 33 ms per frame (30 fps) at 50,000 nodes / 600,000 links, 29 ms at 10,000 / 120,000, 1.7 ms for a small vault; CPU rasterizer, links sampled past 8M line pixels; layout tick 26 ms on a worker thread | **missed** |
-| Mermaid render | < 50 ms | not implemented | n/a |
+| Mermaid render | < 50 ms | flowchart/sequence layout + paint inside the 5-7 ms frame | met |
 
 Caveats, stated plainly:
 
@@ -84,8 +84,9 @@ Caveats, stated plainly:
 | Wikilinks, embeds, block ids, callouts, comments, highlights, tags, footnotes, front matter, task lists, tables, math spans | done | Parsed with byte-exact spans |
 | Incremental re-parse | done | Property-tested equal to a full parse (60,000 cases) |
 | HTML rendering | done | Used by export |
-| Math rendering | none | Parsed, shown as source |
-| Code syntax highlighting | none | |
+| Math rendering | partial | `math-core`: `$$` blocks typeset (fractions, roots, scripts, big operators with limits, `\left\right`, matrices, aligned, `\text`, `\mathbf/rm/bb/cal`); inline `$..$` is typeset in a row under its paragraph (not in the text flow); unknown commands show their source; no `\underbrace`, `\overset`, colors, tags |
+| Code syntax highlighting | done | `highlight-core`, hand-written (no dependencies): rust, js/ts, python, json, yaml, toml, bash, html, css, c/c++, go, java and relatives, sql, markdown, diff, generic fallback. Colors come from Obsidian's `--code-*` variables. Cached per block text, blocks over 256 KB are left plain. Not incremental inside one huge block |
+| Mermaid diagrams | partial | `mermaid-core`: `graph`/`flowchart` (TD/LR/RL/BT, node shapes, edge labels and styles, subgraph frames, layered layout) and `sequenceDiagram` (messages, notes, loop/alt frames, autonumber); other diagram types show the source with a notice |
 | Fuzzing with `cargo-fuzz` | none | Property tests with arbitrary input stand in for it |
 
 ### Editor

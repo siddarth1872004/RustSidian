@@ -567,6 +567,9 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
             embeds(app, dom, view, &tab.path, &b.tree, &buf.slice(b.start, b.end()));
         }
         if rendered {
+            if let Some(n) = crate::rich::notice(&b.tree, &src, root.span.start) {
+                dom.add(view, El::div().class("rich-notice").text(n));
+            }
             let math = crate::rich::inline_math(&b.tree, &buf.slice(b.start, b.end()));
             if !math.is_empty() {
                 crate::rich::add(dom, view, crate::rich::Kind::MathRow(math), &mut info.rich);

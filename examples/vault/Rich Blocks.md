@@ -48,3 +48,37 @@ $$
 $$
 \begin{aligned} f(x) &= (x+1)^2 \\ &= x^2 + 2x + 1 \end{aligned}
 $$
+
+## Mermaid
+
+```mermaid
+graph TD
+    A[Start] --> B{Is it ok?}
+    B -->|yes| C(Ship it)
+    B -->|no| D[Fix]
+    D --> B
+    C --> E((Done))
+```
+
+```mermaid
+flowchart LR
+    In([Input]) --> P[Parse] -.-> T[Tree]
+    P ==> L[Layout] --> Out[Paint]
+```
+
+```mermaid
+sequenceDiagram
+    participant A as Alice
+    participant B as Bob
+    A->>B: Hello Bob
+    B-->>A: Hi Alice
+    Note over A,B: a short chat
+    loop every day
+        A->>A: think
+    end
+```
+
+```mermaid
+pie title Pets
+    "Dogs" : 3
+```

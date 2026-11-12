@@ -112,7 +112,7 @@ Rows marked *(not built)* are decisions for components that do not exist yet.
 | WASM runtime *(not built)* | `wasmi` | Pure-Rust interpreter with fuel metering, small. `wasmtime` (even with Winch/Pulley) could not be built here to compare. |
 | Async | No runtime; `std::thread` + channels, `rayon` for indexing and search | Idle CPU must be 0%; a blocking event loop with worker threads is the simplest way to guarantee it. |
 | YAML | Own front-matter reader/writer in `md-engine` | Front matter edits must preserve key order and untouched values, which serde-based YAML crates do not guarantee. It covers the YAML subset Obsidian properties use (scalars, quoted strings, flow and block lists, nested maps, block scalars); anchors, tags and multi-document streams are not supported. |
-| Syntax highlighting *(not built)* | `syntect` with the pure-Rust `fancy-regex` backend, lazy | `tree-sitter` needs a C compiler. |
+| Syntax highlighting | Own tokenizer in `highlight-core` | `tree-sitter` needs a C compiler; `syntect` was not tried to keep the binary small (the whole rich-block work added 0.24 MB). |
 
 ## 6. Search backend
 

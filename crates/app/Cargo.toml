@@ -28,6 +28,7 @@ graph-core = { path = "../graph-core" }
 editor-core = { path = "../editor-core" }
 highlight-core = { path = "../highlight-core" }
 math-core = { path = "../math-core" }
+mermaid-core = { path = "../mermaid-core" }
 theme-engine = { path = "../theme-engine" }
 walnut-ui = { path = "../walnut-ui" }
 serde_json = { version = "1", features = ["preserve_order"] }
