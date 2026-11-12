@@ -28,3 +28,23 @@ def greet(name: str) -> str:
 -old line
 +new line
 ```
+
+## Math
+
+Euler wrote $e^{i\pi} + 1 = 0$ and $\alpha_1 \leq \sqrt{x^2+y^2}$ inline.
+
+$$
+\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}
+$$
+
+$$
+\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}, \qquad \left( \frac{a+b}{c} \right)^2
+$$
+
+$$
+A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}, \quad \mathbf{v} \in \mathbb{R}^n, \quad \text{unknown: } \foo{x}
+$$
+
+$$
+\begin{aligned} f(x) &= (x+1)^2 \\ &= x^2 + 2x + 1 \end{aligned}
+$$

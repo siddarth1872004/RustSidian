@@ -1,0 +1,11 @@
+[package]
+name = "math-core"
+description = "LaTeX math subset parser and box layout, no JavaScript and no fonts required"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]

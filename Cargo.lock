@@ -2246,6 +2246,7 @@ dependencies = [
  "editor-core",
  "graph-core",
  "highlight-core",
+ "math-core",
  "md-engine",
  "search-core",
  "serde_json",

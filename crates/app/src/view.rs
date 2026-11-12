@@ -166,6 +166,8 @@ pub struct ViewInfo {
     /// The graph pane and the hidden elements its colors are read from.
     pub graph: Option<NodeId>,
     pub graph_colors: Vec<NodeId>,
+    /// Math and diagram blocks painted after layout.
+    pub rich: Vec<crate::rich::Item>,
 }
 
 /// Syntax-highlight spans for a fenced code block, appended to `spans`. `map` is the
@@ -183,11 +185,13 @@ fn code_spans(
     let root = tree.root();
     let NodeKind::CodeBlock { info, content, .. } = root.kind else { return };
     let (cs, ce) = (block_start + content.start as usize, block_start + content.end as usize);
-    let (Some(text), Some(info)) =
-        (src.get(cs.saturating_sub(src_start)..ce.saturating_sub(src_start)), src.get(
-            (block_start + info.start as usize).saturating_sub(src_start)..(block_start + info.end as usize).saturating_sub(src_start),
-        ))
-    else {
+    let (Some(text), Some(info)) = (
+        src.get(cs.saturating_sub(src_start)..ce.saturating_sub(src_start)),
+        src.get(
+            (block_start + info.start as usize).saturating_sub(src_start)
+                ..(block_start + info.end as usize).saturating_sub(src_start),
+        ),
+    ) else {
         return;
     };
     if text.is_empty() || text.len() > MAX || cs < src_start {
@@ -473,6 +477,21 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
             table(dom, view, pal, &src, s, &b.tree, b.start, first + i, &block_decos, info);
             continue;
         }
+        if rendered {
+            if let Some(kind) = crate::rich::block_kind(&b.tree, &src, root.span.start) {
+                let node = crate::rich::add(dom, view, kind, &mut info.rich);
+                let bv = BlockView {
+                    block: first + i,
+                    node,
+                    src_start: s,
+                    src_end: e,
+                    map: vec![(s, 0, 0)],
+                    ..BlockView::default()
+                };
+                info.blocks.push(bv);
+                continue;
+            }
+        }
         let mut callout: Option<(Color, usize, usize)> = None;
         if rendered && matches!(root.kind, NodeKind::BlockQuote | NodeKind::Callout { .. }) {
             hide_quote_markers(&src, s, &mut block_decos);
@@ -546,6 +565,12 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
         info.blocks.push(bv);
         if tab.mode != ViewMode::Source {
             embeds(app, dom, view, &tab.path, &b.tree, &buf.slice(b.start, b.end()));
+        }
+        if rendered {
+            let math = crate::rich::inline_math(&b.tree, &buf.slice(b.start, b.end()));
+            if !math.is_empty() {
+                crate::rich::add(dom, view, crate::rich::Kind::MathRow(math), &mut info.rich);
+            }
         }
     }
 }

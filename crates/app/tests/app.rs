@@ -307,6 +307,26 @@ fn code_blocks_are_highlighted() {
     assert!(colors.len() >= 4, "{colors:?}");
 }
 
+#[test]
+fn math_blocks_are_typeset_and_editable() {
+    let (_d, mut app) = note("intro\n\n$$\n\\frac{a}{b}\n$$\n\nAfter $x^2$ here.\n", "{}");
+    cursor_at(&mut app, "intro");
+    let mut fonts = Fonts::new();
+    let mut pm = Pixmap::new(900, 700).unwrap();
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert_eq!(frame.info.rich.len(), 2);
+    for it in &frame.info.rich {
+        assert!(!frame.dom.nodes[it.node].draw.is_empty());
+    }
+    let block = &frame.info.rich[0];
+    let r = frame.dom.content_rect(block.node);
+    assert!(r.h > 30.0);
+    app.click(&frame, &mut fonts, r.x + r.w / 2.0, r.y + r.h / 2.0, false);
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    assert!(frame.info.blocks.iter().any(|b| b.display.contains("\\frac{a}{b}")));
+    assert_eq!(frame.info.rich.len(), 1);
+}
+
 fn tiny_skia_color(r: u8, g: u8, b: u8) -> walnut_ui::SkColor {
     walnut_ui::SkColor::from_rgba8(r, g, b, 255)
 }

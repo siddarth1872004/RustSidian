@@ -10,7 +10,9 @@ pub fn html(src: &str, base: usize, out: &mut Vec<Token>) {
             let e = src[i..].find("-->").map_or(n, |x| i + x + 3);
             push(out, base, i, e, Class::Comment);
             i = e;
-        } else if b[i] == b'<' && b.get(i + 1).is_some_and(|c| c.is_ascii_alphabetic() || matches!(c, b'/' | b'!' | b'?')) {
+        } else if b[i] == b'<'
+            && b.get(i + 1).is_some_and(|c| c.is_ascii_alphabetic() || matches!(c, b'/' | b'!' | b'?'))
+        {
             let mut j = i + 1;
             while j < n && matches!(b[j], b'/' | b'!' | b'?') {
                 j += 1;
@@ -52,7 +54,9 @@ pub fn html(src: &str, base: usize, out: &mut Vec<Token>) {
                 i = e;
             }
         } else if b[i] == b'&' {
-            let e = src[i..].find(|c: char| !(c.is_ascii_alphanumeric() || c == '&' || c == '#')).map_or(n, |x| i + x);
+            let e = src[i..]
+                .find(|c: char| !(c.is_ascii_alphanumeric() || c == '&' || c == '#'))
+                .map_or(n, |x| i + x);
             if b.get(e) == Some(&b';') {
                 push(out, base, i, e + 1, Class::Important);
                 i = e + 1;
@@ -174,7 +178,11 @@ pub fn diff(src: &str, base: usize, out: &mut Vec<Token>) {
     let mut pos = 0;
     for line in src.split_inclusive('\n') {
         let t = line.trim_end_matches(['\n', '\r']);
-        let class = if t.starts_with("+++") || t.starts_with("---") || t.starts_with("diff ") || t.starts_with("index ") {
+        let class = if t.starts_with("+++")
+            || t.starts_with("---")
+            || t.starts_with("diff ")
+            || t.starts_with("index ")
+        {
             Some(Class::Important)
         } else if t.starts_with("@@") {
             Some(Class::Tag)

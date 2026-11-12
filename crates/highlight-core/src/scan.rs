@@ -57,7 +57,10 @@ pub fn sw(src: &str, i: usize, pat: &str) -> bool {
 }
 
 fn is_op(c: u8) -> bool {
-    matches!(c, b'+' | b'-' | b'*' | b'/' | b'%' | b'=' | b'<' | b'>' | b'!' | b'&' | b'|' | b'^' | b'~' | b'?')
+    matches!(
+        c,
+        b'+' | b'-' | b'*' | b'/' | b'%' | b'=' | b'<' | b'>' | b'!' | b'&' | b'|' | b'^' | b'~' | b'?'
+    )
 }
 
 pub fn generic(sp: &Spec, src: &str, base: usize, out: &mut Vec<Token>) {
@@ -107,7 +110,8 @@ pub fn generic(sp: &Spec, src: &str, base: usize, out: &mut Vec<Token>) {
         }
         if sp.quotes.as_bytes().contains(&c) {
             let e = string_end(sp, src, i);
-            let class = if sp.keys == Keys::Json && next_is(b, e, b':') { Class::Property } else { Class::String };
+            let class =
+                if sp.keys == Keys::Json && next_is(b, e, b':') { Class::Property } else { Class::String };
             push(out, base, i, e, class);
             i = e;
             continue;
