@@ -1,0 +1,19 @@
+{
+	"nodes":[
+		{"id":"g1","type":"group","x":-420,"y":-260,"width":520,"height":420,"label":"Spring","color":"4"},
+		{"id":"t1","type":"text","x":-390,"y":-210,"width":220,"height":120,"text":"# Seeds\n- **tomatoes**\n- *basil* and `mint`\n- [[Plants]]","color":"1"},
+		{"id":"t2","type":"text","x":-390,"y":-40,"width":220,"height":100,"text":"Plain note without a color. It wraps onto several lines when the node is narrow."},
+		{"id":"f1","type":"file","file":"Projects/Garden.md","x":-120,"y":-210,"width":200,"height":150,"color":"#d9a441"},
+		{"id":"f2","type":"file","file":"Attachments/pixel.png","x":-120,"y":-30,"width":160,"height":120},
+		{"id":"f3","type":"file","file":"Welcome.md","x":220,"y":-220,"width":260,"height":160,"color":"6"},
+		{"id":"l1","type":"link","url":"https://obsidian.md/canvas","x":220,"y":0,"width":260,"height":90,"color":"5"},
+		{"id":"t3","type":"text","x":220,"y":160,"width":260,"height":90,"text":"## Later\nPrune the roses","color":"2"}
+	],
+	"edges":[
+		{"id":"e1","fromNode":"t1","fromSide":"right","toNode":"f1","toSide":"left","toEnd":"arrow"},
+		{"id":"e2","fromNode":"f1","fromSide":"right","toNode":"f3","toSide":"left","toEnd":"arrow","label":"see also","color":"3"},
+		{"id":"e3","fromNode":"t2","fromSide":"bottom","toNode":"t3","toSide":"left","fromEnd":"arrow","toEnd":"arrow","color":"1"},
+		{"id":"e4","fromNode":"f3","fromSide":"bottom","toNode":"l1","toSide":"top","toEnd":"none"}
+	],
+	"metadata":{"version":"1.0-1.0","frontmatter":{}}
+}

@@ -151,6 +151,11 @@ pub const COMMANDS: &[(&str, &str, &str)] = &[
     ("editor:add-cursor-below", "Add cursor below", "Ctrl+Alt+ArrowDown"),
     ("editor:select-next-occurrence", "Select next occurrence", "Ctrl+D"),
     ("editor:follow-link", "Follow link under cursor", "Alt+Enter"),
+    ("canvas:add-text", "Canvas: Add text node", ""),
+    ("canvas:delete-selected", "Canvas: Delete selected node", ""),
+    ("canvas:edit-selected", "Canvas: Edit selected text node", ""),
+    ("canvas:reset-view", "Canvas: Fit canvas to pane", ""),
+    ("canvas:focus", "Canvas: Show canvas", ""),
     ("graph:open", "Graph view: Open graph view", "Ctrl+G"),
     ("graph:open-local", "Graph view: Open local graph", ""),
     ("graph:toggle-tags", "Graph view: Toggle tags", ""),
@@ -267,6 +272,8 @@ pub struct App {
     pub graph_view: Option<crate::graphview::GraphView>,
     /// The graph is shown in the main pane instead of the active note.
     pub show_graph: bool,
+    pub canvas_view: Option<crate::canvasview::CanvasView>,
+    pub show_canvas: bool,
     pub store: VaultStore,
     pub config: ObsidianConfig,
     pub theme: Theme,
@@ -381,6 +388,8 @@ impl App {
             media: Default::default(),
             graph_view: None,
             show_graph: false,
+            canvas_view: None,
+            show_canvas: false,
             recovery: Recovery::new(root),
             store,
             theme,
@@ -505,10 +514,11 @@ impl App {
 
     /// The note being edited; `None` while the graph has the main pane.
     pub fn tab(&self) -> Option<&Tab> {
-        self.tabs.get(self.active).filter(|_| !self.show_graph)
+        self.tabs.get(self.active).filter(|_| !self.show_graph && !self.canvas_active())
     }
     pub fn tab_mut(&mut self) -> Option<&mut Tab> {
-        self.tabs.get_mut(self.active).filter(|_| !self.show_graph)
+        let shown = !self.show_graph && !self.canvas_active();
+        self.tabs.get_mut(self.active).filter(|_| shown)
     }
 
     pub fn hotkey_for(&self, command: &str) -> String {
@@ -532,6 +542,9 @@ impl App {
             if let Some(f) = self.store.index.resolve(&rel, "").and_then(|id| self.store.index.entry(id)) {
                 rel = f.path.to_string();
             }
+        }
+        if path::kind_of(&rel) == FileKind::Canvas {
+            return self.open_canvas(&rel);
         }
         if let Some(i) = self.tabs.iter().position(|t| t.path.eq_ignore_ascii_case(&rel)) {
             self.active = i;
@@ -565,6 +578,7 @@ impl App {
         }
         self.focus = Focus::Editor;
         self.show_graph = false;
+        self.show_canvas = false;
         if record {
             self.history.truncate(self.history_pos + usize::from(!self.history.is_empty()));
             if self.history.last() != Some(&rel) {
@@ -609,6 +623,7 @@ impl App {
 
     /// Save every modified tab (called when the window loses focus, on a timer, and on quit).
     pub fn save_all(&mut self) {
+        self.canvas_save();
         let active = self.active;
         for i in 0..self.tabs.len() {
             self.active = i;
@@ -630,6 +645,7 @@ impl App {
     /// React to files changed on disk by another program.
     pub fn files_changed(&mut self, paths: &[String]) {
         self.tree = None;
+        self.canvas_files_changed(paths);
         if let Some(g) = &mut self.graph_view {
             g.dirty = true;
         }
@@ -691,6 +707,7 @@ impl App {
             }
             PromptKind::Switcher => {
                 let mut paths: Vec<&str> = self.store.index.notes().map(|(_, f)| &*f.path).collect();
+                paths.extend(self.store.index.iter().filter(|(_, f)| f.kind == FileKind::Canvas).map(|(_, f)| &*f.path));
                 if query.is_empty() {
                     // Recently opened first.
                     paths.sort_by_key(|p| std::cmp::Reverse(self.history.iter().rposition(|h| h == p)));
@@ -799,6 +816,7 @@ impl App {
             if i < self.tabs.len() {
                 self.active = i;
                 self.show_graph = false;
+                self.show_canvas = false;
                 self.focus = Focus::Editor;
             }
             return;
@@ -854,6 +872,11 @@ impl App {
                 self.graph_view = None;
                 self.show_graph = false;
             }
+            "workspace:close" if self.canvas_active() => {
+                self.canvas_save();
+                self.canvas_view = None;
+                self.show_canvas = false;
+            }
             "workspace:close" => {
                 if self.save() && self.active < self.tabs.len() {
                     self.tabs.remove(self.active);
@@ -861,6 +884,7 @@ impl App {
                 }
             }
             "workspace:next-tab" | "workspace:previous-tab" if self.show_graph => self.show_graph = false,
+            "workspace:next-tab" | "workspace:previous-tab" if self.canvas_active() => self.show_canvas = false,
             "workspace:next-tab" if !self.tabs.is_empty() => {
                 self.active = (self.active + 1) % self.tabs.len()
             }
@@ -948,7 +972,7 @@ impl App {
                 self.quit = true;
             }
             _ => {
-                if self.run_graph(command) {
+                if self.run_graph(command) || self.run_canvas(command) {
                     return;
                 }
                 if self.run_editing(command, now) {
@@ -1053,6 +1077,9 @@ impl App {
                 true
             }
             Focus::Editor => {
+                if self.canvas_active() {
+                    return self.canvas_key(&key);
+                }
                 let Some(t) = self.tabs.get_mut(self.active).filter(|_| !self.show_graph) else {
                     return false;
                 };
@@ -1163,6 +1190,7 @@ impl App {
                 self.refresh_prompt();
             }
             Focus::Search => self.search_query.push_str(text),
+            Focus::Editor if self.canvas_active() => self.canvas_text(text),
             Focus::Editor => {
                 let shown = !self.show_graph;
                 if let Some(t) =

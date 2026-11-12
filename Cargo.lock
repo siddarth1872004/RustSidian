@@ -2231,6 +2231,7 @@ dependencies = [
 name = "walnut"
 version = "0.1.0"
 dependencies = [
+ "canvas-core",
  "editor-core",
  "graph-core",
  "md-engine",

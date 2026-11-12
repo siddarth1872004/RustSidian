@@ -127,6 +127,8 @@ pub struct ViewInfo {
     /// The graph pane and the hidden elements its colors are read from.
     pub graph: Option<NodeId>,
     pub graph_colors: Vec<NodeId>,
+    pub canvas: Option<NodeId>,
+    pub canvas_colors: Vec<NodeId>,
 }
 
 /// Turn a block's source and decorations into display text and styled spans.
@@ -760,7 +762,7 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
             tabs,
             El::div()
                 .class("workspace-tab-header")
-                .class_if(i == app.active && !app.show_graph, "is-active")
+                .class_if(i == app.active && !app.show_graph && !app.canvas_active(), "is-active")
                 .text(format!("{}{dirty}", t.title()))
                 .action(format!("tab:{i}")),
         );
@@ -775,8 +777,19 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
                 .action("graph:focus"),
         );
     }
+    if let Some(c) = &app.canvas_view {
+        dom.add(
+            tabs,
+            El::div()
+                .class("workspace-tab-header")
+                .class_if(app.canvas_active(), "is-active")
+                .text(c.title())
+                .action("canvas:focus"),
+        );
+    }
     match &app.graph_view {
         Some(g) if app.show_graph => graph(g, &mut dom, root, &mut info),
+        _ if app.canvas_active() => crate::canvasview::pane(app.canvas_view.as_ref().unwrap(), &mut dom, root, &mut info),
         _ => editor(app, &mut dom, root, &pal, &mut info),
     }
     if app.right_open {
