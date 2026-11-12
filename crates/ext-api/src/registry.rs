@@ -60,9 +60,10 @@ impl Registry {
         std::mem::take(&mut self.notices)
     }
     pub(crate) fn push_notice(&mut self, plugin: &str, text: String) {
-        if self.notices.len() < MAX_NOTICES {
-            self.notices.push(Notice { plugin: plugin.to_string(), text });
+        if self.notices.len() >= MAX_NOTICES {
+            self.notices.remove(0);
         }
+        self.notices.push(Notice { plugin: plugin.to_string(), text });
     }
     pub(crate) fn push_log(&mut self, plugin: &str, text: String) {
         if self.logs.len() >= MAX_LOGS {

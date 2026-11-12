@@ -1,0 +1,18 @@
+[package]
+name = "plugin-host-wasm"
+description = "Sandboxed WASM plugin host (pure-Rust wasmi interpreter) on top of ext-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+ext-api = { path = "../ext-api" }
+wasmi = { version = "2.0.0", features = ["portable-dispatch"] }
+serde_json = "1"
+
+[dev-dependencies]
+wat = "1"
+tempfile = "3"

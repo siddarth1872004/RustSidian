@@ -104,3 +104,26 @@ fn plugin_list_and_reload_report_unloadable_plugins() {
     app.run("plugins:reload");
     assert!(!app.plugin_list()[0].enabled);
 }
+
+#[cfg(feature = "wasm-plugins")]
+#[test]
+fn example_wasm_plugin_loads_and_runs_in_the_app() {
+    let d = tempfile::tempdir().unwrap();
+    fs::write(d.path().join("Home.md"), "# Home\n").unwrap();
+    let p = d.path().join(".obsidian/plugins/hello-wasm");
+    fs::create_dir_all(&p).unwrap();
+    fs::write(p.join("manifest.json"), include_str!("../../../examples/plugins/hello-wasm/manifest.json"))
+        .unwrap();
+    fs::write(p.join("main.wasm"), include_bytes!("../../../examples/plugins/hello-wasm/main.wasm")).unwrap();
+    fs::write(d.path().join(".obsidian/community-plugins.json"), r#"["hello-wasm"]"#).unwrap();
+    let mut app = App::open(d.path()).unwrap();
+    app.open_note("Home");
+    app.run("plugins:reload");
+    assert!(app.plugin_list()[0].loaded, "{:?}", app.plugin_list());
+    app.run("hello-wasm:hello");
+    app.pump_plugins();
+    assert_eq!(app.notice.as_deref(), Some("Hello from a WASM plugin"));
+    app.run("hello-wasm:stamp");
+    assert!(app.tab().unwrap().editor.buf.text().starts_with("stamped\n"));
+    assert!(app.plugins.ext.reg.status.iter().any(|s| s.text.starts_with("hello-wasm")));
+}

@@ -4,7 +4,7 @@
 use crate::shell::{App, Key};
 use editor_core::{Change, EditKind, Editor, Sel};
 use ext_api::{
-    Discovered, Event, Extension, Extensions, Host, NoteInfo, PluginInfo, PluginStatus, Selection,
+    Discovered, Event, Extension, Extensions, Host, NoteInfo, PluginInfo, PluginKind, PluginStatus, Selection,
 };
 use md_engine::frontmatter::Value as Fm;
 use serde_json::{json, Value};
@@ -234,8 +234,15 @@ impl Host for AppHost<'_> {
 /// Create the runtime for a discovered plugin. Each runtime lives in its own crate behind a
 /// cargo feature; a kind that is not compiled in reports that as the plugin's error.
 fn instantiate(d: &Discovered, root: &Path) -> Result<Box<dyn Extension>, String> {
-    let _ = root;
-    Err(format!("no runtime for {:?} plugins in this build ({})", d.kind, d.entry))
+    match d.kind {
+        #[cfg(feature = "wasm-plugins")]
+        PluginKind::Wasm => plugin_host_wasm::load_file(plugin_info(d), &root.join(&d.entry))
+            .map(|p| Box::new(p) as Box<dyn Extension>),
+        kind => {
+            let _ = root;
+            Err(format!("no runtime for {kind:?} plugins in this build ({})", d.entry))
+        }
+    }
 }
 
 pub fn plugin_info(d: &Discovered) -> PluginInfo {
