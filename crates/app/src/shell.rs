@@ -707,7 +707,13 @@ impl App {
             }
             PromptKind::Switcher => {
                 let mut paths: Vec<&str> = self.store.index.notes().map(|(_, f)| &*f.path).collect();
-                paths.extend(self.store.index.iter().filter(|(_, f)| f.kind == FileKind::Canvas).map(|(_, f)| &*f.path));
+                paths.extend(
+                    self.store
+                        .index
+                        .iter()
+                        .filter(|(_, f)| f.kind == FileKind::Canvas)
+                        .map(|(_, f)| &*f.path),
+                );
                 if query.is_empty() {
                     // Recently opened first.
                     paths.sort_by_key(|p| std::cmp::Reverse(self.history.iter().rposition(|h| h == p)));
@@ -884,7 +890,9 @@ impl App {
                 }
             }
             "workspace:next-tab" | "workspace:previous-tab" if self.show_graph => self.show_graph = false,
-            "workspace:next-tab" | "workspace:previous-tab" if self.canvas_active() => self.show_canvas = false,
+            "workspace:next-tab" | "workspace:previous-tab" if self.canvas_active() => {
+                self.show_canvas = false
+            }
             "workspace:next-tab" if !self.tabs.is_empty() => {
                 self.active = (self.active + 1) % self.tabs.len()
             }

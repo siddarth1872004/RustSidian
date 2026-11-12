@@ -122,7 +122,8 @@ fn markdown_lite(src: &str, accent: Color, faint: Color) -> (String, Vec<Span>) 
 }
 
 fn inline(out: &mut String, spans: &mut Vec<Span>, s: &str, base: &Span, accent: Color) {
-    const PAIRS: [(&str, &str); 6] = [("**", "**"), ("~~", "~~"), ("`", "`"), ("*", "*"), ("_", "_"), ("[[", "]]")];
+    const PAIRS: [(&str, &str); 6] =
+        [("**", "**"), ("~~", "~~"), ("`", "`"), ("*", "*"), ("_", "_"), ("[[", "]]")];
     fn push(out: &mut String, spans: &mut Vec<Span>, text: &str, style: Span) {
         let start = out.len();
         out.push_str(text);
@@ -249,7 +250,9 @@ impl CanvasView {
     /// The node under a world point; a group only answers on its header strip so that the rest
     /// of it pans the canvas.
     fn node_at(&self, w: [f64; 2]) -> Option<&Node> {
-        self.canvas.hit(w[0], w[1]).filter(|n| !matches!(n.kind, NodeKind::Group { .. }) || w[1] <= n.y + GROUP_HEAD)
+        self.canvas
+            .hit(w[0], w[1])
+            .filter(|n| !matches!(n.kind, NodeKind::Group { .. }) || w[1] <= n.y + GROUP_HEAD)
     }
 
     fn commit_edit(&mut self) {
@@ -273,7 +276,11 @@ impl CanvasView {
     pub fn press(&mut self, rect: &Rect, x: f32, y: f32) {
         let w = self.to_world(rect, x, y);
         if self.editing.is_some() {
-            let inside = self.selected.as_deref().and_then(|id| self.canvas.node(id)).is_some_and(|n| n.contains(w[0], w[1]));
+            let inside = self
+                .selected
+                .as_deref()
+                .and_then(|id| self.canvas.node(id))
+                .is_some_and(|n| n.contains(w[0], w[1]));
             if inside {
                 return;
             }
@@ -286,7 +293,12 @@ impl CanvasView {
             if within(x, r.x, r.x + r.w) && within(y, r.y, r.y + r.h) {
                 let sides = [near(x, r.x), near(x, r.x + r.w), near(y, r.y), near(y, r.y + r.h)];
                 if sides.iter().any(|&s| s) {
-                    let drag = Drag::Resize { id: sel.id.clone(), sides, start: w, orig: [sel.x, sel.y, sel.width, sel.height] };
+                    let drag = Drag::Resize {
+                        id: sel.id.clone(),
+                        sides,
+                        start: w,
+                        orig: [sel.x, sel.y, sel.width, sel.height],
+                    };
                     self.press = Some(Press { drag, at: (x, y), moved: false, open: None });
                     return;
                 }
@@ -296,10 +308,12 @@ impl CanvasView {
         let Some((id, kind, top)) = hit else {
             self.selected = None;
             self.last_click = None;
-            self.press = Some(Press { drag: Drag::Pan { last: (x, y) }, at: (x, y), moved: false, open: None });
+            self.press =
+                Some(Press { drag: Drag::Pan { last: (x, y) }, at: (x, y), moved: false, open: None });
             return;
         };
-        let double = self.last_click.as_ref().is_some_and(|(t, last)| *last == id && t.elapsed() < DOUBLE_CLICK);
+        let double =
+            self.last_click.as_ref().is_some_and(|(t, last)| *last == id && t.elapsed() < DOUBLE_CLICK);
         self.last_click = Some((Instant::now(), id.clone()));
         self.selected = Some(id.clone());
         if double && matches!(kind, NodeKind::Text { .. }) {
@@ -389,7 +403,9 @@ impl CanvasView {
         let z = self.zoom;
         let mut cmds = vec![Cmd::PushClip(rect)];
         let view = Rect::new(rect.x - 20.0, rect.y - 20.0, rect.w + 40.0, rect.h + 40.0);
-        let overlaps = |r: &Rect| r.x < view.x + view.w && r.x + r.w > view.x && r.y < view.y + view.h && r.y + r.h > view.y;
+        let overlaps = |r: &Rect| {
+            r.x < view.x + view.w && r.x + r.w > view.x && r.y < view.y + view.h && r.y + r.h > view.y
+        };
         let accent = c[5];
         let selected = self.selected.as_deref();
         for n in self.canvas.nodes.iter().filter(|n| matches!(n.kind, NodeKind::Group { .. })) {
@@ -412,7 +428,13 @@ impl CanvasView {
                         width: Some(r.w),
                         text: l.clone(),
                         spans: Vec::new(),
-                        style: TextStyle { size: 13.0 * z, line_height: 16.0 * z, color: c[3], wrap: false, ..text.clone() },
+                        style: TextStyle {
+                            size: 13.0 * z,
+                            line_height: 16.0 * z,
+                            color: c[3],
+                            wrap: false,
+                            ..text.clone()
+                        },
                     });
                 }
             }
@@ -437,8 +459,14 @@ impl CanvasView {
                 continue;
             }
             let pad = 10.0 * z;
-            let body = Rect::new(inner.x + pad, inner.y + pad * 0.8, (inner.w - 2.0 * pad).max(1.0), (inner.h - 1.6 * pad).max(1.0));
-            let base = TextStyle { size: 14.0 * z, line_height: 20.0 * z, color: c[2], wrap: true, ..text.clone() };
+            let body = Rect::new(
+                inner.x + pad,
+                inner.y + pad * 0.8,
+                (inner.w - 2.0 * pad).max(1.0),
+                (inner.h - 1.6 * pad).max(1.0),
+            );
+            let base =
+                TextStyle { size: 14.0 * z, line_height: 20.0 * z, color: c[2], wrap: true, ..text.clone() };
             cmds.push(Cmd::PushClip(inner));
             match &n.kind {
                 NodeKind::Text { text: src } => {
@@ -447,11 +475,32 @@ impl CanvasView {
                         Some(buf) => (format!("{buf}|"), Vec::new()),
                         None => markdown_lite(src, accent, c[3]),
                     };
-                    cmds.push(Cmd::Text { x: body.x, y: body.y, width: Some(body.w), text: t, spans, style: base });
+                    cmds.push(Cmd::Text {
+                        x: body.x,
+                        y: body.y,
+                        width: Some(body.w),
+                        text: t,
+                        spans,
+                        style: base,
+                    });
                 }
                 NodeKind::Link { url } => {
-                    let span = Span { start: 0, end: url.len(), color: Some(accent), underline: true, scale: 1.0, ..Span::default() };
-                    cmds.push(Cmd::Text { x: body.x, y: body.y, width: Some(body.w), text: url.clone(), spans: vec![span], style: base });
+                    let span = Span {
+                        start: 0,
+                        end: url.len(),
+                        color: Some(accent),
+                        underline: true,
+                        scale: 1.0,
+                        ..Span::default()
+                    };
+                    cmds.push(Cmd::Text {
+                        x: body.x,
+                        y: body.y,
+                        width: Some(body.w),
+                        text: url.clone(),
+                        spans: vec![span],
+                        style: base,
+                    });
                 }
                 NodeKind::File { file, subpath } => {
                     let info = self.files.get(file.as_str());
@@ -463,7 +512,14 @@ impl CanvasView {
                     let th = 24.0 * z;
                     let tcolor = if info.is_some_and(|i| i.missing) { c[3] } else { accent };
                     let tstyle = TextStyle { bold: true, color: tcolor, wrap: false, ..base.clone() };
-                    cmds.push(Cmd::Text { x: body.x, y: body.y, width: Some(body.w), text: title, spans: Vec::new(), style: tstyle });
+                    cmds.push(Cmd::Text {
+                        x: body.x,
+                        y: body.y,
+                        width: Some(body.w),
+                        text: title,
+                        spans: Vec::new(),
+                        style: tstyle,
+                    });
                     if let Some(i) = info {
                         let below = Rect::new(body.x, body.y + th, body.w, (body.h - th).max(1.0));
                         if let Some(img) = &i.image {
@@ -475,7 +531,14 @@ impl CanvasView {
                         } else if let Some(b) = &i.body {
                             let (t, spans) = markdown_lite(b, accent, c[3]);
                             cmds.push(Cmd::PushClip(below));
-                            cmds.push(Cmd::Text { x: below.x, y: below.y, width: Some(below.w), text: t, spans, style: base });
+                            cmds.push(Cmd::Text {
+                                x: below.x,
+                                y: below.y,
+                                width: Some(below.w),
+                                text: t,
+                                spans,
+                                style: base,
+                            });
                             cmds.push(Cmd::PopClip);
                         }
                     }
@@ -489,7 +552,9 @@ impl CanvasView {
     }
 
     fn paint_edge(&self, rect: &Rect, e: &Edge, c: &[Color; 12], text: &TextStyle, cmds: &mut Vec<Cmd>) {
-        let (Some(a), Some(b)) = (self.canvas.node(&e.from_node), self.canvas.node(&e.to_node)) else { return };
+        let (Some(a), Some(b)) = (self.canvas.node(&e.from_node), self.canvas.node(&e.to_node)) else {
+            return;
+        };
         let auto = facing(a, b);
         let (sa, sb) = (e.from_side.unwrap_or(auto.0), e.to_side.unwrap_or(auto.1));
         let z = self.zoom;
@@ -560,13 +625,19 @@ impl CanvasView {
 /// The canvas pane and the hidden elements its colors are read from.
 pub fn pane(c: &CanvasView, dom: &mut Dom, parent: NodeId, info: &mut crate::view::ViewInfo) {
     let header = dom.add(parent, El::div().class("view-header graph-controls canvas-controls"));
-    dom.add(header, El::div().class("graph-count").text(format!("{}  ·  {} nodes", c.path, c.canvas.nodes.len())));
-    for (label, cmd) in [("Add text", "canvas:add-text"), ("Delete", "canvas:delete-selected"), ("Fit", "canvas:reset-view")] {
+    dom.add(
+        header,
+        El::div().class("graph-count").text(format!("{}  ·  {} nodes", c.path, c.canvas.nodes.len())),
+    );
+    for (label, cmd) in
+        [("Add text", "canvas:add-text"), ("Delete", "canvas:delete-selected"), ("Fit", "canvas:reset-view")]
+    {
         dom.add(header, El::div().class("graph-control").text(label).action(cmd));
     }
     let pane = dom.add(parent, El::div().class("view-content canvas-wrapper"));
     let colors = dom.add(pane, El::div().class("canvas-view-colors"));
-    info.canvas_colors = COLOR_CLASSES.iter().map(|k| dom.add(colors, El::div().class("canvas-view").class(k))).collect();
+    info.canvas_colors =
+        COLOR_CLASSES.iter().map(|k| dom.add(colors, El::div().class("canvas-view").class(k))).collect();
     info.canvas = Some(pane);
 }
 

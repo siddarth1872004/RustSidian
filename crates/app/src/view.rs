@@ -789,7 +789,9 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
     }
     match &app.graph_view {
         Some(g) if app.show_graph => graph(g, &mut dom, root, &mut info),
-        _ if app.canvas_active() => crate::canvasview::pane(app.canvas_view.as_ref().unwrap(), &mut dom, root, &mut info),
+        _ if app.canvas_active() => {
+            crate::canvasview::pane(app.canvas_view.as_ref().unwrap(), &mut dom, root, &mut info)
+        }
         _ => editor(app, &mut dom, root, &pal, &mut info),
     }
     if app.right_open {
