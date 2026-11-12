@@ -1,0 +1,17 @@
+[package]
+name = "scripting"
+description = "Rhai user scripts bound to ext-api (commands and automation)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+ext-api = { path = "../ext-api" }
+rhai = { version = "1", default-features = false, features = ["std", "sync", "serde", "no_module"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

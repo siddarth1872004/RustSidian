@@ -13,7 +13,7 @@ the authoritative list; nothing outside it is claimed.
 ## Build and run
 
 ```sh
-cargo build --release -p walnut          # 6.5 MB binary at target/release/walnut
+cargo build --release -p walnut          # 8.9 MB binary at target/release/walnut
 target/release/walnut examples/vault     # open the demo vault in a window
 target/release/walnut help               # CLI: index, search, export, doctor, screenshot, commands
 cargo test --workspace                   # 168 tests
@@ -53,7 +53,7 @@ Synthetic vaults from `perf_budget`.
 
 | Budget | Target | Measured | |
 |---|---|---|---|
-| Release binary, stripped | < 15 MB (aim < 10) | 6.5 MB | met |
+| Release binary, stripped | < 15 MB (aim < 10) | 8.9 MB (6.5 MB without the default `wasm-plugins` feature) | met |
 | Cold start to presented frame, 5,000 notes | < 150 ms | 65–98 ms (worst of 5 runs, three sessions) | met |
 | Cold start to presented frame, 50,000 notes | < 400 ms | 188–260 ms | met |
 | Idle RAM, 10,000 notes | < 80 MB | 34 MB | met |
@@ -158,7 +158,7 @@ Caveats, stated plainly:
 |---|---|---|
 | Export HTML, Markdown bundle | done | |
 | Export PDF, print | none | |
-| Native WASM plugins, plugin SDK, `walnut plugin` | none | |
+| Native WASM plugins (`.obsidian/plugins/<id>/main.wasm`), `plugins:list`, `plugins:reload`, `community-plugins.json` enable list | partial | wasmi host with fuel/memory limits and a permission model (see `PLUGIN_SDK.md`); example plugin in `examples/plugins/hello-wasm`. No SDK crate, no `walnut plugin` scaffold, no plugin settings UI (the app exposes `App::plugin_list` / `set_plugin_enabled` for it) |
 | Obsidian JS plugin compatibility, CM6 adapter, community browser | none | Only the JS engine spike was done |
 | Accessibility (`accesskit`), high contrast, reduced motion | none | Keyboard operation works for what exists; there is no screen-reader support |
 | GPU rendering (`wgpu`) | none | Software rendering only, by measured decision (DECISIONS.md §2) |
@@ -176,6 +176,8 @@ crates/graph-core    graph model, filters, Barnes-Hut layout, graph.json
 crates/editor-core   rope buffer, undo tree, commands, folding, decorations, tables, vim
 crates/theme-engine  CSS parser, selectors, cascade, values
 crates/canvas-core   JSON Canvas model
+crates/ext-api       extension API: JSON call boundary, permissions, registry
+crates/plugin-host-wasm  sandboxed WASM plugin host (wasmi)
 crates/walnut-ui     element tree, flex layout, software renderer
 crates/app           shell, commands, view, CLI, window  (binary: walnut)
 spikes/              the three risk spikes behind DECISIONS.md

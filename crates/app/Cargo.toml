@@ -17,8 +17,10 @@ name = "walnut"
 path = "src/main.rs"
 
 [features]
-default = ["window"]
+default = ["window", "wasm-plugins", "scripting"]
 window = ["dep:winit", "dep:softbuffer"]
+wasm-plugins = ["dep:plugin-host-wasm"]
+scripting = ["dep:scripting"]
 
 [dependencies]
 md-engine = { path = "../md-engine" }
@@ -32,6 +34,9 @@ math-core = { path = "../math-core" }
 mermaid-core = { path = "../mermaid-core" }
 theme-engine = { path = "../theme-engine" }
 walnut-ui = { path = "../walnut-ui" }
+ext-api = { path = "../ext-api" }
+plugin-host-wasm = { path = "../plugin-host-wasm", optional = true }
+scripting = { path = "../scripting", optional = true }
 serde_json = { version = "1", features = ["preserve_order"] }
 winit = { version = "0.30", optional = true, default-features = false, features = ["x11", "wayland", "wayland-dlopen", "rwh_06"] }
 softbuffer = { version = "0.4", optional = true, default-features = false, features = ["x11", "x11-dlopen", "wayland", "wayland-dlopen"] }
