@@ -4,6 +4,8 @@ pub mod cli;
 pub mod editing;
 pub mod graphview;
 pub mod media;
+pub mod properties;
+pub mod settings;
 pub mod shell;
 pub mod view;
 
@@ -41,6 +43,9 @@ impl App {
     pub fn click(&mut self, frame: &Frame, fonts: &mut Fonts, x: f32, y: f32, shift: bool) {
         if let Some((_, action)) = frame.dom.action_at(x, y) {
             let action = action.to_string();
+            if !action.starts_with("prop:") && !action.starts_with("settings:") {
+                self.commit_prop_edit();
+            }
             return self.run(&action);
         }
         if self.prompt.is_some() {

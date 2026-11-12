@@ -166,6 +166,9 @@ pub const COMMANDS: &[(&str, &str, &str)] = &[
     ("theme:toggle-light-dark", "Toggle light/dark mode", ""),
     ("app:reload-theme", "Reload themes and snippets", ""),
     ("app:toggle-perf-overlay", "Toggle performance overlay", "Ctrl+Shift+F12"),
+    ("app:open-settings", "Open settings", "Ctrl+,"),
+    ("properties:add", "Add file property", ""),
+    ("properties:toggle-source", "Toggle properties in document: table/source", ""),
     ("app:quit", "Quit", "Ctrl+Q"),
 ];
 
@@ -262,6 +265,8 @@ pub struct SearchResult {
 pub struct App {
     /// Whether new tabs get vim keys (`vimMode` in `.obsidian/app.json`, or toggled).
     pub vim: bool,
+    pub settings: Option<crate::settings::SettingsUi>,
+    pub prop_edit: Option<crate::properties::Edit>,
     /// Images and embedded notes shown by the editor view.
     pub media: std::cell::RefCell<crate::media::Media>,
     pub graph_view: Option<crate::graphview::GraphView>,
@@ -314,7 +319,7 @@ fn tree_key(p: &str) -> String {
     key
 }
 
-fn load_theme(config: &ObsidianConfig) -> Theme {
+pub(crate) fn load_theme(config: &ObsidianConfig) -> Theme {
     let mut theme = Theme::new();
     theme.add_sheet("base", BASE_CSS);
     if let Some(name) = config.css_theme() {
@@ -327,10 +332,13 @@ fn load_theme(config: &ObsidianConfig) -> Theme {
             theme.add_sheet(&format!("snippet:{snippet}"), &css);
         }
     }
+    if let Some(n) = config.appearance.get("baseFontSize").and_then(serde_json::Value::as_f64) {
+        theme.add_sheet("settings", &format!("body {{ --font-text-size: {n}px }}"));
+    }
     theme
 }
 
-fn default_keymap(config: &ObsidianConfig) -> Vec<(Vec<Key>, String)> {
+pub(crate) fn default_keymap(config: &ObsidianConfig) -> Vec<(Vec<Key>, String)> {
     let mut map: Vec<(Vec<Key>, String)> = Vec::new();
     let overrides = config.hotkeys.value.as_object();
     for (id, _, default) in COMMANDS {
@@ -378,6 +386,8 @@ impl App {
         let dark = config.color_scheme().unwrap_or(true);
         Ok(App {
             vim: config.app.bool("vimMode", false),
+            settings: None,
+            prop_edit: None,
             media: Default::default(),
             graph_view: None,
             show_graph: false,
@@ -556,6 +566,7 @@ impl App {
                         vim: self.vim.then(Default::default),
                     });
                     self.active = self.tabs.len() - 1;
+                    self.init_new_tab();
                 }
                 Err(e) => {
                     self.notice = Some(format!("Cannot open {rel}: {e}"));
@@ -810,6 +821,12 @@ impl App {
             self.tree = None;
             return;
         }
+        if self.run_settings(command) || self.run_properties(command) {
+            return;
+        }
+        if self.settings.is_some() {
+            self.settings = None;
+        }
         if command == "focus:search" {
             self.focus = Focus::Search;
             return;
@@ -839,7 +856,7 @@ impl App {
                 self.panel = Panel::Files;
             }
             "file-explorer:new-file" => {
-                let rel = self.unique_untitled();
+                let rel = path::join(&self.new_note_dir(), &self.unique_untitled());
                 match self.store.create(&rel, "") {
                     Ok(_) => self.open_note(&rel),
                     Err(e) => self.notice = Some(format!("Cannot create note: {e}")),
@@ -941,6 +958,7 @@ impl App {
                 self.keymap = default_keymap(&self.config);
                 self.store.index.link_format = self.config.link_format();
                 self.store.trash_mode = self.config.trash_option();
+                self.config_changed();
             }
             "app:toggle-perf-overlay" => self.perf = !self.perf,
             "app:quit" => {
@@ -1007,6 +1025,9 @@ impl App {
     /// Handle a key press. Returns true if it was consumed.
     pub fn key(&mut self, key: Key) -> bool {
         self.notice = None;
+        if let Some(r) = self.modal_key(&key) {
+            return r;
+        }
         // Key sequences: collect keys while they are a prefix of some binding.
         let mut seq = std::mem::take(&mut self.pending);
         seq.push(key.clone());
@@ -1151,6 +1172,9 @@ impl App {
     /// Committed text from the keyboard or an input method.
     pub fn text_input(&mut self, text: &str) {
         if text.is_empty() || text.chars().any(char::is_control) {
+            return;
+        }
+        if self.modal_text(text) {
             return;
         }
         let now = fsio::now_ms();

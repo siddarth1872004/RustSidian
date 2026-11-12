@@ -341,7 +341,9 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
     } else {
         "view-content markdown-source-view cm-editor"
     };
-    let view = dom.add(parent, El::div().class(class).id("editor"));
+    let readable = if app.config.app.bool("readableLineLength", false) { " is-readable-line-width" } else { "" };
+    let class = format!("{class}{readable}");
+    let view = dom.add(parent, El::div().class(&class).id("editor"));
     info.editor = Some(view);
     let buf = &tab.editor.buf;
     let doc = buf.doc();
@@ -385,6 +387,12 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
             ViewMode::LivePreview => !sels.iter().any(|x| x.start() <= e && x.end() >= s),
         };
         let src = buf.slice(s, e);
+        if rendered
+            && matches!(root.kind, NodeKind::FrontMatter { .. })
+            && crate::properties::render(app, dom, view, tab.mode, &src)
+        {
+            continue;
+        }
         let mut block_decos: Vec<Deco> = decos.iter().filter(|d| d.start < e && d.end > s).copied().collect();
         for &(hs, he) in hidden.iter().filter(|&&(hs, he)| hs < e && he > s) {
             block_decos.push(Deco { start: hs.max(s), end: he.min(e), style: Deco_::Hide });
@@ -739,6 +747,7 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
         ("⇄", "switcher:open", false),
         ("⌘", "command-palette:open", false),
         ("◐", "theme:toggle-light-dark", false),
+        ("⚙", "app:open-settings", app.settings.is_some()),
     ] {
         dom.add(
             ribbon,
@@ -829,6 +838,7 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
             dom.add(row, El::div().class("suggestion-aux").text(item.aux.clone()));
         }
     }
+    crate::settings::modal(app, &mut dom);
     if let Some(n) = &app.notice {
         dom.add(0, El::div().class("notice").text(n.clone()));
     }
