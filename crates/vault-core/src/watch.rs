@@ -23,7 +23,8 @@ impl VaultWatcher {
         let (tx, rx) = mpsc::channel::<notify::Result<notify::Event>>();
         let mut watcher = notify::recommended_watcher(tx)?;
         watcher.watch(root, RecursiveMode::Recursive)?;
-        let root: PathBuf = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+        let given = root.to_path_buf();
+        let root: PathBuf = root.canonicalize().unwrap_or_else(|_| given.clone());
         std::thread::Builder::new()
             .name("vault-watch".into())
             .spawn(move || {
@@ -34,7 +35,9 @@ impl VaultWatcher {
                         return;
                     }
                     for p in ev.paths {
-                        let Ok(rel) = p.strip_prefix(&root) else { continue };
+                        let Ok(rel) = p.strip_prefix(&root).or_else(|_| p.strip_prefix(&given)) else {
+                            continue;
+                        };
                         let rel = rel.to_string_lossy().replace('\\', "/");
                         let hidden = rel.split('/').any(|s| s.starts_with('.') && s != ".obsidian");
                         if !rel.is_empty() && !hidden {

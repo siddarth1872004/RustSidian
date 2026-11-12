@@ -12,7 +12,7 @@ workspace = true
 md-engine = { path = "../md-engine" }
 rayon = "1"
 memmap2 = "0.9"
-notify = { version = "8", default-features = false }
+notify = { version = "8", default-features = false, features = ["macos_fsevent"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 
 [dev-dependencies]

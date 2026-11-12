@@ -22,8 +22,29 @@ scripts/window-budget.sh <vault dir>     # performance gate (needs a display)
 ```
 
 Requires stable Rust 1.85 or later. All dependencies are pure Rust; no C toolchain is needed.
-Verified on Linux (WSL2 Ubuntu under WSLg, Wayland and X11 backends compiled in). **Windows has
-not been built or run.**
+Verified on Linux (WSL2 Ubuntu under WSLg, Wayland and X11 backends compiled in). Windows
+(`x86_64-pc-windows-gnu`) and macOS (`aarch64-apple-darwin`) pass `cargo check --all-targets` and
+Windows also passes clippy, but **neither has been built, linked or run**.
+
+## Install
+
+Release archives (Linux x86_64, Windows x86_64, macOS arm64 and x86_64, with SHA256SUMS.txt) are
+built by `.github/workflows/release.yml` when a `v*` tag is pushed and attached to the GitHub
+Release. No release has been published yet. On Linux, `packaging/walnut.desktop` and
+`packaging/walnut.svg` can be copied to `~/.local/share/applications` and
+`~/.local/share/icons/hicolor/scalable/apps`.
+
+## Build from source
+
+```sh
+git clone https://github.com/siddarth1872004/RustSidian && cd RustSidian
+cargo build --release -p walnut      # target/release/walnut (walnut.exe on Windows)
+```
+
+Linux needs only a normal system linker (`build-essential`); Windows needs the MSVC build tools.
+The repo forces no linker settings. A machine with no C toolchain can link with `rust-lld` through
+a git-ignored `.cargo/config.toml` of its own. Licensed under MIT OR Apache-2.0
+(`LICENSE-MIT`, `LICENSE-APACHE`).
 
 ## Measured against the budgets
 
@@ -54,7 +75,7 @@ Caveats, stated plainly:
   metadata is decoded from the mapped index on demand, so a vault-wide metadata query (graph
   build, `tag:` search) briefly raises it. On Windows there is no release call yet.
 - The budgets are gated by `perf_budget` and `scripts/window-budget.sh`. They are wired into
-  `.github/workflows/ci.yml`, which **has never been run**.
+  `.github/workflows/ci.yml` and `release.yml`, which **have never been run**.
 
 ## Feature checklist
 
@@ -140,7 +161,7 @@ Caveats, stated plainly:
 | Accessibility (`accesskit`), high contrast, reduced motion | none | Keyboard operation works for what exists; there is no screen-reader support |
 | GPU rendering (`wgpu`) | none | Software rendering only, by measured decision (DECISIONS.md §2) |
 | Multi-window, system tray, file dialogs, URI scheme, file associations, single-instance IPC | none | |
-| Packaging (MSI, zip, Flatpak, AppImage, deb, rpm) | none | CI has an unrun archive step only |
+| Packaging (MSI, zip, Flatpak, AppImage, deb, rpm) | none | Release workflow produces tar.gz/zip archives (unrun); `.desktop` file and SVG icon included |
 | `walnut doctor`, `--profile`, perf overlay (Ctrl+Shift+F12) | done | |
 
 ## Layout
