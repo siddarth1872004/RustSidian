@@ -7,6 +7,7 @@ use std::io;
 pub struct Mapped(Inner);
 
 enum Inner {
+    #[cfg(not(windows))]
     File(memmap2::Mmap),
     Mem(Vec<u8>),
 }
@@ -19,8 +20,20 @@ impl Mapped {
         // stay valid: a replaced file keeps its inode until the map is dropped. If another
         // program truncated the file underneath us the process could receive SIGBUS; the content
         // is checksummed before use.
-        let map = unsafe { memmap2::Mmap::map(file)? };
-        Ok(Mapped(Inner::File(map)))
+        #[cfg(not(windows))]
+        {
+            let map = unsafe { memmap2::Mmap::map(file)? };
+            Ok(Mapped(Inner::File(map)))
+        }
+        // A mapped file cannot be replaced by rename on Windows, so the cache is read instead.
+        #[cfg(windows)]
+        {
+            use std::io::Read;
+            let mut bytes = Vec::new();
+            let mut f = file;
+            f.read_to_end(&mut bytes)?;
+            Ok(Mapped(Inner::Mem(bytes)))
+        }
     }
 
     pub fn from_vec(bytes: Vec<u8>) -> Mapped {
@@ -29,6 +42,7 @@ impl Mapped {
 
     pub fn bytes(&self) -> &[u8] {
         match &self.0 {
+            #[cfg(not(windows))]
             Inner::File(m) => m,
             Inner::Mem(v) => v,
         }

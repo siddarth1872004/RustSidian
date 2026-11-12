@@ -51,8 +51,17 @@ pub struct Fonts {
     mono: String,
 }
 
-const SANS_CANDIDATES: &[&str] =
-    &["Inter", "Noto Sans", "Segoe UI", "DejaVu Sans", "Liberation Sans", "Ubuntu", "Cantarell", "Arial"];
+const SANS_CANDIDATES: &[&str] = &[
+    "Inter",
+    "Noto Sans",
+    "Segoe UI",
+    "DejaVu Sans",
+    "Liberation Sans",
+    "Ubuntu",
+    "Cantarell",
+    "Arial",
+    "Helvetica Neue",
+];
 const MONO_CANDIDATES: &[&str] = &[
     "JetBrains Mono",
     "Cascadia Mono",
@@ -61,6 +70,8 @@ const MONO_CANDIDATES: &[&str] = &[
     "Noto Sans Mono",
     "Liberation Mono",
     "Ubuntu Mono",
+    "Menlo",
+    "Monaco",
 ];
 
 fn key(text: &str, spans: &[Span], style: &TextStyle, width: Option<f32>) -> u64 {
