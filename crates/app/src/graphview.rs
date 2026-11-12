@@ -12,7 +12,7 @@ use walnut_ui::{Cmd, Rect, TextStyle};
 const MAX_LABELS: usize = 300;
 const HIT_SLOP: f32 = 4.0;
 /// Line pixels drawn per frame before links are sampled.
-const LINE_PIXEL_BUDGET: f32 = 8.0e6;
+const LINE_PIXEL_BUDGET: f32 = 3.0e6;
 
 #[derive(Default)]
 struct SimState {
@@ -360,10 +360,13 @@ impl GraphView {
             (Some(p), Some(q)) => (p.0 - q.0).abs().max((p.1 - q.1).abs()).min(rect.w.max(rect.h)),
             _ => 0.0,
         };
-        let pixels: f32 = g.edges.iter().map(long).sum();
+        let sample = if g.edges.len() > 4096 { 16 } else { 1 };
+        let pixels = g.edges.iter().step_by(sample).map(long).sum::<f32>() * sample as f32;
         let stride = (pixels / LINE_PIXEL_BUDGET).ceil().max(1.0) as usize;
         let mut drawn = 0usize;
-        for &(a, b) in &g.edges {
+        // Without a focused node no link is special, so only the sampled ones are visited.
+        let step = if focus.is_some() { 1 } else { stride };
+        for &(a, b) in g.edges.iter().step_by(step) {
             let (a, b) = (a as usize, b as usize);
             if a >= n || b >= n {
                 continue;
@@ -387,7 +390,7 @@ impl GraphView {
                 // Dense graphs draw an even sample of their links: past the pixel budget the
                 // links are a uniform haze, and drawing all of them costs whole frames.
                 drawn += 1;
-                if !drawn.is_multiple_of(stride) {
+                if step == 1 && !drawn.is_multiple_of(stride) {
                     continue;
                 }
                 &mut lines

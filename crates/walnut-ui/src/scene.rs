@@ -191,8 +191,9 @@ fn banded(
         return;
     }
     let rows = (clip.y1 - clip.y0) as usize;
-    // Small jobs are not worth waking the pool for.
-    let bands = if work < 2000 { 1 } else { rayon::current_num_threads().clamp(1, rows.div_ceil(16)) };
+    // Small jobs are not worth waking the pool for. More bands than threads, so that work
+    // stealing evens out bands of unequal density.
+    let bands = if work < 2000 { 1 } else { (rayon::current_num_threads() * 4).clamp(1, rows.div_ceil(8)) };
     let band_h = rows.div_ceil(bands);
     let area = &mut data[clip.y0 as usize * stride * 4..clip.y1 as usize * stride * 4];
     let run = |(i, rows): (usize, &mut [u8])| {
