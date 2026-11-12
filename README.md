@@ -100,7 +100,8 @@ Caveats, stated plainly:
 | Vim mode | partial | On when `vimMode` is set in `.obsidian/app.json`, or with `Toggle Vim key bindings`. Subset documented in `editor-core/src/vim.rs`; the mode is shown in the status bar; the caret does not change shape |
 | IME | partial | Committed text is accepted; no pre-edit display. fcitx/ibus untested |
 | RTL, ligatures | partial | Whatever `cosmic-text` shaping provides; not tested |
-| Spellcheck, drag and drop, paste of files/images, properties editor, hover preview, slash commands | none | |
+| Spellcheck, drag and drop, paste of files/images, hover preview, slash commands | none | |
+| Properties editor | partial | Front matter shown as a table in live preview and reading view: text, number, checkbox, date, list pills (tags, aliases, cssclasses). Edit, add (`properties:add`), rename, remove; edits are buffer edits (undo works) and only the changed entry is rewritten. `properties:toggle-source` or the `propertiesInDocument` setting shows raw source. No type picker or `types.json`; flow lists become block lists when edited; nested values are read-only |
 | Embeds of notes and images | partial | `![[Note]]`, `![[Note#Heading]]`, `![[Note#^block]]` show the note or section below the paragraph (first 30 blocks; tables and nested embeds inside it as source). `![[image.png\|100x80]]` and `![](image.png)` show PNG images only, decoded on the UI thread at first display; JPEG, GIF, WebP, SVG and remote images are not shown |
 | Embeds of audio, video, PDF | none | |
 
@@ -126,7 +127,7 @@ Caveats, stated plainly:
 | CSS subset engine | done | See `THEME_COMPAT.md` for the exact subset |
 | Themes from `.obsidian/themes/`, snippets from `.obsidian/snippets/`, live reload | partial | Loaded and reloaded on change. **No community theme has been tested**; themes that rely on unsupported CSS will apply only in part |
 | Light/dark | partial | Follows `appearance.json` and a toggle command; does not follow the OS setting |
-| Commands with stable ids, rebindable through `hotkeys.json`, key sequences | done | No visual hotkey editor |
+| Commands with stable ids, rebindable through `hotkeys.json`, key sequences | done | Settings window (`Ctrl+,`, ribbon gear): Editor, Files & links, Appearance (scheme, theme, snippets, font size), Hotkeys (rebind, reset; first binding only), About. Saved to `app.json`, `appearance.json`, `hotkeys.json` with unknown keys kept. Dropdowns cycle on click |
 | Everything else in the customisation section (TOML config, JSON Schema, data-driven layout, theme inspector UI, scripting, feature flags, profiles, portable mode, `--config-dir`) | none | The theme engine has an `inspect` API; no UI uses it |
 
 ### Export, plugins, platform

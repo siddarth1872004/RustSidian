@@ -220,7 +220,10 @@ const ITEMS: &[Item] = &[
         key: "theme",
         name: "Base color scheme",
         desc: "Light or dark base for the interface.",
-        control: Choice("obsidian", &[("obsidian", "Dark"), ("moonstone", "Light"), ("system", "Adapt to system")]),
+        control: Choice(
+            "obsidian",
+            &[("obsidian", "Dark"), ("moonstone", "Light"), ("system", "Adapt to system")],
+        ),
     },
     Item {
         section: Appearance,
@@ -339,7 +342,9 @@ impl App {
             Some("current") => {
                 self.tab().map(|t| vault_core::path::parent(&t.path).to_string()).unwrap_or_default()
             }
-            Some("folder") => vault_core::path::normalize(self.config.app.str("newFileFolderPath").unwrap_or("")),
+            Some("folder") => {
+                vault_core::path::normalize(self.config.app.str("newFileFolderPath").unwrap_or(""))
+            }
             _ => String::new(),
         }
     }
@@ -615,7 +620,10 @@ fn items_view(app: &App, dom: &mut Dom, parent: NodeId, ui: &SettingsUi, section
                 let label = opts.iter().find(|o| o.0 == cur).map_or(cur, |o| o.1);
                 dom.add(
                     ctl,
-                    El::div().class("dropdown").text(format!("{label} ▾")).action(format!("settings:cycle:{}", it.key)),
+                    El::div()
+                        .class("dropdown")
+                        .text(format!("{label} ▾"))
+                        .action(format!("settings:cycle:{}", it.key)),
                 );
             }
             Text => input(dom, ctl, it.key, file.str(it.key).unwrap_or(""), ui.edit.as_ref()),
@@ -637,7 +645,10 @@ fn appearance_view(app: &App, dom: &mut Dom, parent: NodeId, ui: &SettingsUi) {
     let ctl = row(dom, parent, "Reload", "Read themes, snippets and settings from disk again.");
     button(dom, ctl, "Reload", "settings:reload".into(), false);
     if ui.snippets.is_empty() {
-        dom.add(parent, El::div().class("setting-item-description").text("No snippets in .obsidian/snippets."));
+        dom.add(
+            parent,
+            El::div().class("setting-item-description").text("No snippets in .obsidian/snippets."),
+        );
     }
     let enabled = app.config.enabled_snippets();
     for s in &ui.snippets {
@@ -673,7 +684,10 @@ fn hotkeys_view(app: &App, dom: &mut Dom, parent: NodeId, ui: &SettingsUi) {
                 .action(format!("settings:hk:{id}")),
         );
         if custom.is_some_and(|o| o.contains_key(*id)) {
-            dom.add(ctl, El::div().class("setting-hotkey-reset").text("↺").action(format!("settings:hk-reset:{id}")));
+            dom.add(
+                ctl,
+                El::div().class("setting-hotkey-reset").text("↺").action(format!("settings:hk-reset:{id}")),
+            );
         }
     }
 }
@@ -716,7 +730,12 @@ pub fn modal(app: &App, dom: &mut Dom) {
         Section::About => about_view(app, dom, content),
         s => items_view(app, dom, content, ui, s),
     }
-    dom.add(container, El::div().class("setting-footer").text("Changes are saved to .obsidian as you make them.  Esc closes."));
+    dom.add(
+        container,
+        El::div()
+            .class("setting-footer")
+            .text("Changes are saved to .obsidian as you make them.  Esc closes."),
+    );
     let _ = TrashMode::Vault;
 }
 

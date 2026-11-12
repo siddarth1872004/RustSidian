@@ -341,7 +341,8 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
     } else {
         "view-content markdown-source-view cm-editor"
     };
-    let readable = if app.config.app.bool("readableLineLength", false) { " is-readable-line-width" } else { "" };
+    let readable =
+        if app.config.app.bool("readableLineLength", false) { " is-readable-line-width" } else { "" };
     let class = format!("{class}{readable}");
     let view = dom.add(parent, El::div().class(&class).id("editor"));
     info.editor = Some(view);

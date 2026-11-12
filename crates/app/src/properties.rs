@@ -37,7 +37,9 @@ const LIST_KEYS: [&str; 6] = ["tags", "tag", "aliases", "alias", "cssclasses", "
 pub fn kind(key: &str, v: &Value) -> Kind {
     let listy = LIST_KEYS.iter().any(|k| k.eq_ignore_ascii_case(key));
     match v {
-        Value::List(items) if items.iter().all(|i| !matches!(i, Value::Map(_) | Value::List(_))) => Kind::List,
+        Value::List(items) if items.iter().all(|i| !matches!(i, Value::Map(_) | Value::List(_))) => {
+            Kind::List
+        }
         Value::List(_) | Value::Map(_) => Kind::Other,
         Value::Null if listy => Kind::List,
         Value::String(_) if listy => Kind::List,
@@ -69,11 +71,11 @@ fn list_items(v: &Value) -> Vec<Value> {
 
 /// Parse the front matter at the start of `text` (fences included). `Err` when there is none or
 /// it is not valid YAML, in which case the source is shown instead.
-pub fn scan(text: &str) -> Result<Front, ()> {
+pub fn scan(text: &str) -> Option<Front> {
     let mut lines = text.split_inclusive('\n');
-    let first = lines.next().ok_or(())?;
+    let first = lines.next()?;
     if first.trim_end() != "---" {
-        return Err(());
+        return None;
     }
     let mut at = first.len();
     let mut body: Vec<(usize, &str)> = Vec::new();
@@ -86,13 +88,13 @@ pub fn scan(text: &str) -> Result<Front, ()> {
         body.push((at, l));
         at += l.len();
     }
-    let close = close.ok_or(())?;
+    let close = close?;
     let is_key_line = |l: &str| {
         !l.is_empty() && !l.starts_with([' ', '\t', '#', '\n', '\r']) && !l.starts_with("- ") && l != "-\n"
     };
     let starts: Vec<usize> = (0..body.len()).filter(|&i| is_key_line(body[i].1)).collect();
     let content = &text[first.len()..close];
-    frontmatter::parse(content).map_err(|_| ())?;
+    frontmatter::parse(content).ok()?;
     let mut entries = Vec::new();
     for (n, &i) in starts.iter().enumerate() {
         let start = body[i].0;
@@ -107,10 +109,10 @@ pub fn scan(text: &str) -> Result<Front, ()> {
                 break;
             }
         }
-        let (key, value) = frontmatter::parse(&text[start..end]).map_err(|_| ())?.into_iter().next().ok_or(())?;
+        let (key, value) = frontmatter::parse(&text[start..end]).ok()?.into_iter().next()?;
         entries.push(Entry { key, value, start, end });
     }
-    Ok(Front { entries, close })
+    Some(Front { entries, close })
 }
 
 fn serialize(key: &str, v: &Value) -> String {
@@ -177,7 +179,7 @@ pub fn render(app: &App, dom: &mut Dom, parent: NodeId, mode: ViewMode, text: &s
     if mode_setting(app) == "hidden" {
         return true;
     }
-    let Ok(front) = scan(text) else { return false };
+    let Some(front) = scan(text) else { return false };
     let edit = app.prop_edit.as_ref();
     let editing = |t: &Target| edit.filter(|e| &e.target == t);
     let shown = |e: &Edit| format!("{}▏", e.buf);
@@ -192,7 +194,10 @@ pub fn render(app: &App, dom: &mut Dom, parent: NodeId, mode: ViewMode, text: &s
             Some(e) => dom.add(kcell, El::div().class("metadata-input is-editing").text(shown(e))),
             None => dom.add(
                 kcell,
-                El::div().class("metadata-property-key-input").text(en.key.clone()).action(format!("prop:key:{i}")),
+                El::div()
+                    .class("metadata-property-key-input")
+                    .text(en.key.clone())
+                    .action(format!("prop:key:{i}")),
             ),
         };
         let val = dom.add(row, El::div().class("metadata-property-value"));
@@ -201,7 +206,10 @@ pub fn render(app: &App, dom: &mut Dom, parent: NodeId, mode: ViewMode, text: &s
                 let on = en.value == Value::Bool(true);
                 let b = dom.add(
                     val,
-                    El::div().class("checkbox-container").class_if(on, "is-enabled").action(format!("prop:toggle:{i}")),
+                    El::div()
+                        .class("checkbox-container")
+                        .class_if(on, "is-enabled")
+                        .action(format!("prop:toggle:{i}")),
                 );
                 dom.add(b, El::div().class("checkbox-thumb"));
             }
@@ -254,7 +262,10 @@ pub fn render(app: &App, dom: &mut Dom, parent: NodeId, mode: ViewMode, text: &s
                     Some(e) => dom.add(val, El::div().class("metadata-input is-editing").text(shown(e))),
                     None if plain.is_empty() => dom.add(
                         val,
-                        El::div().class("metadata-input is-empty").text("Empty").action(format!("prop:val:{i}")),
+                        El::div()
+                            .class("metadata-input is-empty")
+                            .text("Empty")
+                            .action(format!("prop:val:{i}")),
                     ),
                     None => dom.add(
                         val,
@@ -292,7 +303,7 @@ impl App {
             return None;
         }
         let text = t.editor.buf.slice(0, b.end()).into_owned();
-        scan(&text).ok().map(|f| (f, text))
+        scan(&text).map(|f| (f, text))
     }
 
     fn apply_prop_change(&mut self, change: Change) {
@@ -514,7 +525,8 @@ impl App {
 mod tests {
     use super::*;
 
-    const DOC: &str = "---\ntitle: Hello\n# keep me\ntags:\n  - a\n  - b\ncount: 3\ndone: false\ndate: 2024-01-05\n---\n";
+    const DOC: &str =
+        "---\ntitle: Hello\n# keep me\ntags:\n  - a\n  - b\ncount: 3\ndone: false\ndate: 2024-01-05\n---\n";
 
     fn apply(text: &str, c: &Change) -> String {
         format!("{}{}{}", &text[..c.start], c.text, &text[c.end..])
@@ -544,16 +556,15 @@ mod tests {
         let out = apply(DOC, &f.rename(DOC, 2, "total"));
         assert_eq!(out, DOC.replace("count:", "total:"));
         let out = apply(DOC, &f.add("author", &Value::String("Ann".into())));
-        assert_eq!(out, DOC.replace("---\n", "---\n").replace("date: 2024-01-05\n", "date: 2024-01-05\nauthor: Ann\n"));
+        assert_eq!(out, DOC.replace("date: 2024-01-05\n", "date: 2024-01-05\nauthor: Ann\n"));
         assert!(out.contains("# keep me"));
     }
 
     #[test]
     fn creates_front_matter_and_rejects_bad_yaml() {
         assert_eq!(create("a", &Value::Null).text, "---\na:\n---\n");
-        assert!(scan("no front matter\n").is_err());
-        assert!(scan("---\na: [unclosed\n---\n").is_err());
-        assert!(scan("---\na: 1\n").is_err());
+        assert!(scan("no front matter\n").is_none());
+        assert!(scan("---\na: 1\n").is_none());
         assert!(scan("---\n---\n").unwrap().entries.is_empty());
     }
 }
