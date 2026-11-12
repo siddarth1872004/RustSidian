@@ -105,6 +105,27 @@ fn plugin_list_and_reload_report_unloadable_plugins() {
     assert!(!app.plugin_list()[0].enabled);
 }
 
+#[cfg(feature = "scripting")]
+#[test]
+fn user_script_registers_a_command_and_edits_a_note() {
+    let d = tempfile::tempdir().unwrap();
+    fs::write(d.path().join("Home.md"), "# Home\n").unwrap();
+    fs::create_dir_all(d.path().join(".obsidian/scripts")).unwrap();
+    fs::write(
+        d.path().join(".obsidian/scripts/log.rhai"),
+        r#"register_command("add", "Add line", "add"); fn add() { write("Home.md", read("Home.md") + "added\n"); notice("done"); }"#,
+    )
+    .unwrap();
+    fs::write(d.path().join(".obsidian/community-plugins.json"), r#"["script-log"]"#).unwrap();
+    let mut app = App::open(d.path()).unwrap();
+    app.run("plugins:reload");
+    assert!(app.plugin_list()[0].loaded, "{:?}", app.plugin_list());
+    app.run("script-log:add");
+    app.pump_plugins();
+    assert_eq!(fs::read_to_string(d.path().join("Home.md")).unwrap(), "# Home\nadded\n");
+    assert_eq!(app.notice.as_deref(), Some("done"));
+}
+
 #[cfg(feature = "wasm-plugins")]
 #[test]
 fn example_wasm_plugin_loads_and_runs_in_the_app() {

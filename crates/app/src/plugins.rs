@@ -238,6 +238,9 @@ fn instantiate(d: &Discovered, root: &Path) -> Result<Box<dyn Extension>, String
         #[cfg(feature = "wasm-plugins")]
         PluginKind::Wasm => plugin_host_wasm::load_file(plugin_info(d), &root.join(&d.entry))
             .map(|p| Box::new(p) as Box<dyn Extension>),
+        #[cfg(feature = "scripting")]
+        PluginKind::Script => scripting::load_file(plugin_info(d), &root.join(&d.entry))
+            .map(|p| Box::new(p) as Box<dyn Extension>),
         kind => {
             let _ = root;
             Err(format!("no runtime for {kind:?} plugins in this build ({})", d.entry))
