@@ -7,21 +7,21 @@ use std::time::Instant;
 use vault_core::config::ObsidianConfig;
 use vault_core::{path, VaultStore};
 
-pub const USAGE: &str = "Rustwalnut
+pub const USAGE: &str = "Rustsidian
 
 USAGE:
-  walnut [open] <vault> [note]              Open a vault in a window
-  walnut index <vault>                      Build or refresh the index and print statistics
-  walnut search <vault> <query> [--limit N] Search with Obsidian query syntax
-  walnut export <vault> <note> [--format html|md] [-o <path>]
-  walnut doctor <vault>                     Diagnose configuration, index and notes
-  walnut screenshot <vault> <out.png> [--note <path>] [--size WxH] [--keys \"Ctrl+P ...\"] [--type <text>] [--run <command id>,...] [--light]
-  walnut commands                           List command ids and default hotkeys
+  rustsidian [open] <vault> [note]              Open a vault in a window
+  rustsidian index <vault>                      Build or refresh the index and print statistics
+  rustsidian search <vault> <query> [--limit N] Search with Obsidian query syntax
+  rustsidian export <vault> <note> [--format html|md] [-o <path>]
+  rustsidian doctor <vault>                     Diagnose configuration, index and notes
+  rustsidian screenshot <vault> <out.png> [--note <path>] [--size WxH] [--keys \"Ctrl+P ...\"] [--type <text>] [--run <command id>,...] [--light]
+  rustsidian commands                           List command ids and default hotkeys
 
 OPTIONS:
   --profile    Print a start-up timing breakdown (with `open` and `index`)
 
-Not implemented in this build: `walnut plugin`, PDF export, `--config-dir`, portable mode.";
+Not implemented in this build: `rustsidian plugin`, PDF export, `--config-dir`, portable mode.";
 
 struct Args {
     pos: Vec<String>,
@@ -62,7 +62,7 @@ pub enum Outcome {
 }
 
 fn fail(msg: &str) -> Outcome {
-    eprintln!("walnut: {msg}");
+    eprintln!("rustsidian: {msg}");
     Outcome::Exit(2)
 }
 
@@ -189,8 +189,8 @@ pub fn run(args: &[String], out: &mut dyn std::io::Write) -> Outcome {
             if let Some(g) = &mut app.graph_view {
                 g.settle();
             }
-            let mut fonts = walnut_ui::Fonts::new();
-            let Some(mut pm) = walnut_ui::Pixmap::new(w.clamp(64, 8192), h.clamp(64, 8192)) else {
+            let mut fonts = rustsidian_ui::Fonts::new();
+            let Some(mut pm) = rustsidian_ui::Pixmap::new(w.clamp(64, 8192), h.clamp(64, 8192)) else {
                 return fail("screenshot: bad size");
             };
             crate::render(&mut app, &mut fonts, &mut pm, 1.0);
@@ -214,7 +214,7 @@ pub fn run(args: &[String], out: &mut dyn std::io::Write) -> Outcome {
         },
         _ => match vault_arg(0) {
             Some(vault) => Outcome::Open { vault, note: a.pos.get(1).cloned(), profile: a.flag("--profile") },
-            None => fail(&format!("`{first}` is neither a command nor a folder. Run `walnut help`.")),
+            None => fail(&format!("`{first}` is neither a command nor a folder. Run `rustsidian help`.")),
         },
     }
 }
@@ -392,14 +392,14 @@ fn doctor(root: &Path, out: &mut dyn std::io::Write) -> Outcome {
             let g = store.index.graph();
             let unresolved: usize = g.unresolved.iter().map(Vec::len).sum();
             line(true, format!("{unresolved} unresolved link targets (informational)"));
-            let tmp = root.join(".walnut").join("doctor-write-test");
+            let tmp = root.join(".rustsidian").join("doctor-write-test");
             let writable = vault_core::fsio::atomic_write(&tmp, b"ok").is_ok();
             let _ = std::fs::remove_file(&tmp);
             line(writable, "vault is writable".into());
         }
         Err(e) => line(false, format!("vault cannot be opened: {e}")),
     }
-    let fonts = walnut_ui::Fonts::new();
+    let fonts = rustsidian_ui::Fonts::new();
     line(fonts.font_count() > 0, format!("{} font faces available", fonts.font_count()));
     let _ = writeln!(
         out,

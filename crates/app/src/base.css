@@ -1,5 +1,5 @@
-/* Rustwalnut base theme. Variable and class names follow Obsidian's documented ones so that
-   community themes and snippets apply; the values are Rustwalnut's own. */
+/* Rustsidian base theme. Variable and class names follow Obsidian's documented ones so that
+   community themes and snippets apply; the values are Rustsidian's own. */
 body {
   --font-text-size: 16px;
   --font-ui-small: 13px;

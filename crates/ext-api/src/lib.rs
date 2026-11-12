@@ -23,7 +23,7 @@ pub use registry::{CommandDef, Notice, Registry, RibbonItem, StatusItem};
 
 use serde::{Deserialize, Serialize};
 
-/// A capability a plugin may be granted. Manifests list them in `walnut.permissions`.
+/// A capability a plugin may be granted. Manifests list them in `rustsidian.permissions`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum Permission {
     #[serde(rename = "vault.read")]

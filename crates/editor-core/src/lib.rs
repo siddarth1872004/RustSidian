@@ -1,4 +1,4 @@
-//! Editor model for Rustwalnut. Headless: no rendering, no IO.
+//! Editor model for Rustsidian. Headless: no rendering, no IO.
 
 pub mod buffer;
 pub mod deco;

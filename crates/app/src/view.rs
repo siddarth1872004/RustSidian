@@ -5,9 +5,9 @@ use crate::shell::{App, Focus, Panel, PromptKind, ViewMode};
 use editor_core::deco::{decorate, Deco, Style as Deco_};
 use editor_core::Sel;
 use md_engine::NodeKind;
+use rustsidian_ui::{Dom, El, Fonts, NodeId, Rect, Span};
 use theme_engine::{parse_color, Color, Element, Env};
 use vault_core::path;
-use walnut_ui::{Dom, El, Fonts, NodeId, Rect, Span};
 
 /// Colors the editor needs for syntax styling, read from the theme's CSS variables.
 #[derive(Clone, Debug)]

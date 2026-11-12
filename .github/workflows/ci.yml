@@ -23,14 +23,14 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
-      - run: cargo build --release -p walnut
+      - run: cargo build --release -p rustsidian
       - name: Performance budgets (exits non-zero when a budget is missed)
         shell: bash
-        run: cargo run --release -p walnut --example perf_budget -- --dir "$RUNNER_TEMP/perf-vaults" --sizes 1000,10000,50000
+        run: cargo run --release -p rustsidian --example perf_budget -- --dir "$RUNNER_TEMP/perf-vaults" --sizes 1000,10000,50000
       - name: Binary size gate (15 MB)
         shell: bash
         run: |
-          bin=target/release/walnut
+          bin=target/release/rustsidian
           [ -f "$bin.exe" ] && bin="$bin.exe"
           size=$(wc -c < "$bin")
           echo "$bin: $size bytes"
@@ -50,6 +50,6 @@ jobs:
       - name: Window budgets under a virtual display (cold start, idle RAM, idle CPU)
         run: |
           sudo apt-get update && sudo apt-get install -y xvfb
-          cargo build --release -p walnut
-          cargo run --release -p walnut --example perf_budget -- --dir "$RUNNER_TEMP/v" --sizes 5000,10000,50000 --report-only
+          cargo build --release -p rustsidian
+          cargo run --release -p rustsidian --example perf_budget -- --dir "$RUNNER_TEMP/v" --sizes 5000,10000,50000 --report-only
           xvfb-run -a scripts/window-budget.sh "$RUNNER_TEMP/v"

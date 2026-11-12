@@ -1,7 +1,7 @@
+use rustsidian_app::shell::{Focus, ViewMode};
+use rustsidian_app::{render, App, Key};
+use rustsidian_ui::{Fonts, Pixmap};
 use std::fs;
-use walnut_app::shell::{Focus, ViewMode};
-use walnut_app::{render, App, Key};
-use walnut_ui::{Fonts, Pixmap};
 
 fn vault() -> tempfile::TempDir {
     let d = tempfile::tempdir().unwrap();
@@ -48,7 +48,7 @@ fn edit_save_and_conflict() {
     typed(&mut app, "!");
     fs::write(d.path().join("Home.md"), "changed elsewhere, different length").unwrap();
     assert!(!app.save());
-    assert!(app.notice.as_deref().unwrap().contains("outside Rustwalnut"));
+    assert!(app.notice.as_deref().unwrap().contains("outside Rustsidian"));
     assert_eq!(fs::read_to_string(d.path().join("Home.md")).unwrap(), "changed elsewhere, different length");
     assert!(
         app.tab().unwrap().editor.buf.text().ends_with("new line!"),
@@ -190,7 +190,7 @@ fn rendering_and_mouse() {
 
 #[test]
 fn cli_commands() {
-    use walnut_app::cli::{run, Outcome};
+    use rustsidian_app::cli::{run, Outcome};
     let d = vault();
     let v = d.path().to_string_lossy().to_string();
     let call = |args: &[&str]| {
@@ -346,8 +346,8 @@ fn mermaid_blocks_are_drawn_or_explained() {
     assert!(frame.info.rich.is_empty());
 }
 
-fn tiny_skia_color(r: u8, g: u8, b: u8) -> walnut_ui::SkColor {
-    walnut_ui::SkColor::from_rgba8(r, g, b, 255)
+fn tiny_skia_color(r: u8, g: u8, b: u8) -> rustsidian_ui::SkColor {
+    rustsidian_ui::SkColor::from_rgba8(r, g, b, 255)
 }
 
 fn note(text: &str, app_json: &str) -> (tempfile::TempDir, App) {

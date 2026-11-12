@@ -1,14 +1,14 @@
 //! The window: winit for events, softbuffer to present the software-rendered frame.
 //! Fully event-driven: the loop sleeps until input, a file change or the autosave deadline.
 
+use rustsidian_app::{App, Frame, Key};
+use rustsidian_ui::{Fonts, Pixmap};
 use std::num::NonZeroU32;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use vault_core::fsio::now_ms;
 use vault_core::watch::VaultWatcher;
-use walnut_app::{App, Frame, Key};
-use walnut_ui::{Fonts, Pixmap};
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
 use winit::event::{ElementState, Ime, MouseButton, MouseScrollDelta, WindowEvent};
@@ -64,7 +64,7 @@ impl Win {
         }
         let Some(pixmap) = &mut self.pixmap else { return };
         let scale = window.scale_factor() as f32;
-        self.frame = Some(walnut_app::render(&mut self.app, &mut self.fonts, pixmap, scale));
+        self.frame = Some(rustsidian_app::render(&mut self.app, &mut self.fonts, pixmap, scale));
         if surface.resize(w, h).is_err() {
             return;
         }
@@ -101,7 +101,7 @@ impl ApplicationHandler<Vec<String>> for Win {
             return;
         }
         let title = format!(
-            "{} - Rustwalnut",
+            "{} - Rustsidian",
             self.app.store.root.file_name().and_then(|n| n.to_str()).unwrap_or("Vault")
         );
         let attrs =
@@ -109,7 +109,7 @@ impl ApplicationHandler<Vec<String>> for Win {
         let window = match el.create_window(attrs) {
             Ok(w) => Arc::new(w),
             Err(e) => {
-                eprintln!("walnut: cannot create a window: {e}");
+                eprintln!("rustsidian: cannot create a window: {e}");
                 el.exit();
                 return;
             }
@@ -120,7 +120,7 @@ impl ApplicationHandler<Vec<String>> for Win {
         match surface {
             Ok(s) => self.surface = Some(s),
             Err(e) => {
-                eprintln!("walnut: cannot create a drawing surface: {e}");
+                eprintln!("rustsidian: cannot create a drawing surface: {e}");
                 el.exit();
                 return;
             }
@@ -262,7 +262,7 @@ pub fn run(vault: &Path, note: Option<&str>, profile: bool) -> i32 {
     let mut app = match App::open(vault) {
         Ok(app) => app,
         Err(e) => {
-            eprintln!("walnut: cannot open {}: {e}", vault.display());
+            eprintln!("rustsidian: cannot open {}: {e}", vault.display());
             return 1;
         }
     };
@@ -276,7 +276,7 @@ pub fn run(vault: &Path, note: Option<&str>, profile: bool) -> i32 {
     let event_loop = match EventLoop::<Vec<String>>::with_user_event().build() {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("walnut: no display available: {e}");
+            eprintln!("rustsidian: no display available: {e}");
             return 1;
         }
     };
@@ -317,7 +317,7 @@ pub fn run(vault: &Path, note: Option<&str>, profile: bool) -> i32 {
     match event_loop.run_app(&mut win) {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("walnut: {e}");
+            eprintln!("rustsidian: {e}");
             1
         }
     }

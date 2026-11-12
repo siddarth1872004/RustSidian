@@ -1,6 +1,6 @@
 [package]
 name = "ext-api"
-description = "Rustwalnut extension API: one JSON call boundary shared by WASM, script and JS hosts"
+description = "Rustsidian extension API: one JSON call boundary shared by WASM, script and JS hosts"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

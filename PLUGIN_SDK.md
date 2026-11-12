@@ -2,7 +2,7 @@
 
 A plugin is a folder `.obsidian/plugins/<id>/` with Obsidian's `manifest.json` and a `main.wasm`.
 Enable it by listing the id in `.obsidian/community-plugins.json`; run `plugins:reload` to apply.
-Optional manifest section `"walnut": {"permissions": [...]}` with any of `vault.read`,
+Optional manifest section `"rustsidian": {"permissions": [...]}` with any of `vault.read`,
 `vault.write`, `editor.read`, `editor.write`, `ui`. Without it a WASM plugin gets
 `vault.read`, `editor.read` and `ui`. Commands, settings (`data.json`) and events need no permission.
 

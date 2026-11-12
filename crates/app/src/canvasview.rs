@@ -3,12 +3,12 @@
 
 use crate::shell::{App, Focus};
 use canvas_core::{Canvas, Edge, Node, NodeKind, Side};
+use rustsidian_ui::{Cmd, Dom, El, NodeId, Rect, Span, TextStyle};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use theme_engine::Color;
 use vault_core::fsio::{self, Stamp};
 use vault_core::{path, WriteError};
-use walnut_ui::{Cmd, Dom, El, NodeId, Rect, Span, TextStyle};
 
 /// Hidden elements the colors are read from, in order: node fill, border, text, faint text,
 /// edge, accent, then the six canvas presets.
@@ -52,7 +52,7 @@ struct Press {
 struct FileInfo {
     title: String,
     body: Option<String>,
-    image: Option<walnut_ui::Image>,
+    image: Option<rustsidian_ui::Image>,
     missing: bool,
 }
 
@@ -699,7 +699,7 @@ impl App {
                 v.dirty = false;
             }
             Err(WriteError::Conflict { .. }) => {
-                self.notice = Some(format!("{} was changed outside Rustwalnut. Not saved.", v.path))
+                self.notice = Some(format!("{} was changed outside Rustsidian. Not saved.", v.path))
             }
             Err(WriteError::Io(e)) => self.notice = Some(format!("Save failed: {e}")),
         }

@@ -1,22 +1,22 @@
-//! Rustwalnut application library: state, commands, view construction and headless rendering.
+//! Rustsidian application library: state, commands, view construction and headless rendering.
 
 pub mod canvasview;
 pub mod cli;
 pub mod editing;
 pub mod graphview;
 pub mod media;
+pub mod plugins;
 pub mod properties;
 pub mod rich;
 pub mod settings;
-pub mod plugins;
 pub mod shell;
 pub mod view;
 
 pub use shell::{App, Key};
 
+use rustsidian_ui::{Dom, Fonts, Pixmap};
 use std::time::Instant;
 use theme_engine::Env;
-use walnut_ui::{Dom, Fonts, Pixmap};
 
 /// One rendered frame and the information needed to map input back onto it.
 pub struct Frame {
@@ -39,7 +39,7 @@ pub fn render(app: &mut App, fonts: &mut Fonts, pixmap: &mut Pixmap, scale: f32)
     rich::paint(&mut dom, &info.rich, fonts);
     let scene = dom.paint();
     let clear = dom.nodes[0].style.background;
-    walnut_ui::render(&scene, fonts, pixmap, scale, clear);
+    rustsidian_ui::render(&scene, fonts, pixmap, scale, clear);
     app.last_frame_us = t.elapsed().as_micros() as u64;
     Frame { dom, info }
 }
@@ -129,6 +129,6 @@ impl App {
 }
 
 /// The graph pane of a frame, when the graph is showing.
-fn graph_rect(frame: &Frame) -> Option<walnut_ui::Rect> {
+fn graph_rect(frame: &Frame) -> Option<rustsidian_ui::Rect> {
     frame.info.graph.map(|n| frame.dom.nodes[n].rect)
 }

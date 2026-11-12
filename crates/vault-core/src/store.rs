@@ -42,7 +42,7 @@ pub enum WriteError {
 impl std::fmt::Display for WriteError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            WriteError::Conflict { .. } => write!(f, "file was modified outside Rustwalnut"),
+            WriteError::Conflict { .. } => write!(f, "file was modified outside Rustsidian"),
             WriteError::Io(e) => write!(f, "{e}"),
         }
     }
@@ -111,7 +111,7 @@ fn walk(root: &Path) -> Vec<(String, Stamp)> {
 
 impl VaultStore {
     pub fn cache_path(root: &Path) -> PathBuf {
-        root.join(".walnut/cache/index.bin")
+        root.join(".rustsidian/cache/index.bin")
     }
 
     /// Open a vault. Metadata of files whose mtime and size match the persisted index is reused;

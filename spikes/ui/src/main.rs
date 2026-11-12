@@ -9,7 +9,7 @@ fn main() {
     let font_init = t.elapsed();
     let mut cache = SwashCache::new();
     let mut pm = Pixmap::new(w, h).unwrap();
-    let text = "Rustwalnut — the quick brown fox jumps over the lazy dog. [[Wikilink]] **bold** #tag ﬁ → λ\n".repeat(60);
+    let text = "Rustsidian — the quick brown fox jumps over the lazy dog. [[Wikilink]] **bold** #tag ﬁ → λ\n".repeat(60);
     let mut buf = Buffer::new(&mut fs, Metrics::new(15.0, 22.0));
     buf.set_size(Some(w as f32 - 40.0), Some(h as f32));
     let t = Instant::now();

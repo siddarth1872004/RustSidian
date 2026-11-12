@@ -1,10 +1,10 @@
 //! Content shown inside notes that lives in other files: images and embedded notes.
 //! Entries are keyed by vault path and reloaded when the file's modification time changes.
 
+use rustsidian_ui::Image;
 use std::collections::HashMap;
 use std::sync::Arc;
 use vault_core::VaultStore;
-use walnut_ui::Image;
 
 /// Files larger than this are not decoded.
 const MAX_IMAGE_BYTES: u64 = 32 * 1024 * 1024;

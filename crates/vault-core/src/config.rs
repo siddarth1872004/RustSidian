@@ -73,7 +73,7 @@ impl JsonFile {
     }
 }
 
-/// The set of Obsidian config files Rustwalnut reads and writes.
+/// The set of Obsidian config files Rustsidian reads and writes.
 pub struct ObsidianConfig {
     pub dir: PathBuf,
     pub app: JsonFile,

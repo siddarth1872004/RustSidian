@@ -4,7 +4,7 @@
 //! is built); the commands are produced after layout, when real font metrics are available.
 
 use md_engine::{NodeKind, Tree};
-use walnut_ui::{Cmd, Color, Dom, El, Fonts, NodeId, Rect, TextStyle};
+use rustsidian_ui::{Cmd, Color, Dom, El, Fonts, NodeId, Rect, TextStyle};
 
 #[derive(Clone, Debug)]
 pub enum Kind {

@@ -3,10 +3,10 @@
 //! effect at once.
 
 use crate::shell::{default_keymap, load_theme, App, Key, COMMANDS};
+use rustsidian_ui::{Dom, El, NodeId};
 use serde_json::{json, Value};
 use vault_core::config::JsonFile;
 use vault_core::fsio::TrashMode;
-use walnut_ui::{Dom, El, NodeId};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Section {
@@ -693,7 +693,7 @@ fn hotkeys_view(app: &App, dom: &mut Dom, parent: NodeId, ui: &SettingsUi) {
 }
 
 fn about_view(app: &App, dom: &mut Dom, parent: NodeId) {
-    let ctl = row(dom, parent, "Rustwalnut", "Obsidian-compatible knowledge base.");
+    let ctl = row(dom, parent, "Rustsidian", "Obsidian-compatible knowledge base.");
     dom.add(ctl, El::div().class("setting-value").text(format!("v{}", env!("CARGO_PKG_VERSION"))));
     let ctl = row(dom, parent, "Vault", "");
     dom.add(ctl, El::div().class("setting-value").text(app.store.root.display().to_string()));

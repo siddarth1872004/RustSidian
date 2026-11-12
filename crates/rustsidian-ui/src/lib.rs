@@ -1,4 +1,4 @@
-//! UI toolkit for Rustwalnut: a CSS-styled retained element tree rendered by a software
+//! UI toolkit for Rustsidian: a CSS-styled retained element tree rendered by a software
 //! rasterizer. Window integration lives in the `app` crate; everything here is headless and can
 //! render to a pixel buffer for tests.
 

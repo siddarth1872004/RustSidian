@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "minAppVersion": "1.0.0",
   "description": "Example WASM plugin: a notice, a status bar item and an editor edit.",
-  "author": "Rustwalnut",
+  "author": "Rustsidian",
   "isDesktopOnly": false,
-  "walnut": { "permissions": ["editor.write", "ui"] }
+  "rustsidian": { "permissions": ["editor.write", "ui"] }
 }

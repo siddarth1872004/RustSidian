@@ -1,4 +1,4 @@
-use walnut_ui::{Dom, El, Env, Fonts, Theme};
+use rustsidian_ui::{Dom, El, Env, Fonts, Theme};
 
 const CSS: &str = "
 body { --bg: #1e1e1e; --bg2: #262626; --text: #dcddde; --accent: hsl(258, 88%, 66%); background: var(--bg); color: var(--text); font-size: 14px; display: flex; flex-direction: column }
@@ -74,7 +74,7 @@ fn renders_and_follows_color_scheme() {
     assert!(fonts.font_count() > 0, "no fonts available for the render test");
     let mut px = |dark: bool| {
         let mut d = build();
-        let pm = walnut_ui::render_to_pixmap(
+        let pm = rustsidian_ui::render_to_pixmap(
             &mut d,
             &theme,
             Env { dark, reduced_motion: false },
@@ -84,7 +84,7 @@ fn renders_and_follows_color_scheme() {
             1.0,
         )
         .unwrap();
-        if let Ok(dir) = std::env::var("WALNUT_SCREENSHOT_DIR") {
+        if let Ok(dir) = std::env::var("RUSTSIDIAN_SCREENSHOT_DIR") {
             pm.save_png(format!("{dir}/ui-{}.png", if dark { "dark" } else { "light" })).unwrap();
         }
         let at = |x: u32, y: u32| {
@@ -110,10 +110,10 @@ fn renders_and_follows_color_scheme() {
 #[test]
 fn text_queries() {
     let mut fonts = Fonts::new();
-    let style = walnut_ui::TextStyle {
+    let style = rustsidian_ui::TextStyle {
         size: 14.0,
         line_height: 20.0,
-        color: walnut_ui::Color::rgb(0, 0, 0),
+        color: rustsidian_ui::Color::rgb(0, 0, 0),
         bold: false,
         italic: false,
         mono: false,

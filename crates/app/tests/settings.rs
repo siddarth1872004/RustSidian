@@ -1,6 +1,6 @@
+use rustsidian_app::{App, Key};
 use serde_json::json;
 use std::fs;
-use walnut_app::{App, Key};
 
 fn vault() -> tempfile::TempDir {
     let d = tempfile::tempdir().unwrap();

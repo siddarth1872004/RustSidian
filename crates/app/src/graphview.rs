@@ -3,11 +3,11 @@
 
 use crate::shell::App;
 use graph_core::{Forces, Graph, GraphSettings, Layout, Local, NodeKind, Sets};
+use rustsidian_ui::{Cmd, Rect, TextStyle};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use theme_engine::Color;
-use walnut_ui::{Cmd, Rect, TextStyle};
 
 const MAX_LABELS: usize = 300;
 const HIT_SLOP: f32 = 4.0;

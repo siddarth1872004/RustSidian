@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Rustwalnut
+Name=Rustsidian
 Comment=Obsidian-compatible knowledge base
-Exec=walnut %f
-Icon=walnut
+Exec=rustsidian %f
+Icon=rustsidian
 Terminal=false
 Categories=Office;Utility;TextEditor;
 Keywords=notes;markdown;obsidian;vault;

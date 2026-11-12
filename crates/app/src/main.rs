@@ -1,4 +1,4 @@
-use walnut_app::cli::{self, Outcome};
+use rustsidian_app::cli::{self, Outcome};
 
 #[cfg(feature = "window")]
 mod window;
@@ -11,7 +11,7 @@ fn main() {
         Outcome::Open { vault, note, profile } => window::run(&vault, note.as_deref(), profile),
         #[cfg(not(feature = "window"))]
         Outcome::Open { .. } => {
-            eprintln!("walnut: this build has no window support (built without the `window` feature)");
+            eprintln!("rustsidian: this build has no window support (built without the `window` feature)");
             2
         }
     };

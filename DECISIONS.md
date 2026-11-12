@@ -32,7 +32,7 @@ pure-Rust side has numbers; the other side is marked "not measured".
 | Binary: tiny-skia + cosmic-text + taffy | 4.3 MB unstripped |
 | Binary: wgpu + winit probe | 7.5 MB unstripped |
 
-**Decision.** The UI toolkit (`walnut-ui`) renders through a `RenderBackend` trait with a display
+**Decision.** The UI toolkit (`rustsidian-ui`) renders through a `RenderBackend` trait with a display
 list in between. The **software backend (tiny-skia) is the default presenter and the first frame
 always comes from it**. Reasons, all measured:
 
@@ -74,8 +74,8 @@ module free of C. `rquickjs` is the recommended production engine on size and sp
 exists so it can be swapped in; that swap is unverified work, not a claim. `deno_core` is rejected
 on size.
 
-Because boa is 16 MB, `compat-js` is a separate `cdylib` (`libwalnut_compat_js.so` /
-`walnut_compat_js.dll`) loaded with `dlopen` only when a JS plugin is enabled. It does not count
+Because boa is 16 MB, `compat-js` is a separate `cdylib` (`librustsidian_compat_js.so` /
+`rustsidian_compat_js.dll`) loaded with `dlopen` only when a JS plugin is enabled. It does not count
 against, and cannot affect, the 15 MB core budget.
 
 ## 4. Spike: editor buffer and the CodeMirror 6 adapter
@@ -146,7 +146,7 @@ known cost; an on-disk n-gram index would remove it.
 
 The spec names `taffy`. Its 0.15 leaf-measurement API differs substantially from earlier
 versions, and the toolkit needs text measurement in the layout pass. Rather than spend the
-session on an integration that could not be checked against documentation offline, `walnut-ui`
+session on an integration that could not be checked against documentation offline, `rustsidian-ui`
 implements the flexbox subset the shell uses (direction, grow, shrink, fixed and percentage
 sizes, min/max, padding, margin, border, gap, align, justify, absolute positioning, overflow).
 Cost: no grid, no wrapping flex lines. Moving to taffy later replaces one file (`dom.rs` layout).

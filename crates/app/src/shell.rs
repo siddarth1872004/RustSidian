@@ -626,7 +626,7 @@ impl App {
             }
             Err(WriteError::Conflict { .. }) => {
                 self.notice = Some(format!(
-                    "{} was changed outside Rustwalnut. Not saved; your text is kept in this tab.",
+                    "{} was changed outside Rustsidian. Not saved; your text is kept in this tab.",
                     tab.path
                 ));
                 false

@@ -29,21 +29,21 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
-      - run: cargo build --release -p walnut --target ${{ matrix.target }}
+      - run: cargo build --release -p rustsidian --target ${{ matrix.target }}
       - name: Package
         shell: bash
         run: |
-          dir="walnut-${GITHUB_REF_NAME}-${{ matrix.name }}"
+          dir="rustsidian-${GITHUB_REF_NAME}-${{ matrix.name }}"
           mkdir "$dir"
           cp README.md LICENSE-MIT LICENSE-APACHE "$dir/"
           if [ "${{ runner.os }}" = "Windows" ]; then
-            cp "target/${{ matrix.target }}/release/walnut.exe" "$dir/"
+            cp "target/${{ matrix.target }}/release/rustsidian.exe" "$dir/"
             7z a "$dir.zip" "$dir"
           else
-            cp "target/${{ matrix.target }}/release/walnut" "$dir/"
-            strip "$dir/walnut" || true
+            cp "target/${{ matrix.target }}/release/rustsidian" "$dir/"
+            strip "$dir/rustsidian" || true
             if [ "${{ runner.os }}" = "Linux" ]; then
-              cp packaging/walnut.desktop packaging/walnut.svg "$dir/"
+              cp packaging/rustsidian.desktop packaging/rustsidian.svg "$dir/"
             fi
             tar czf "$dir.tar.gz" "$dir"
           fi

@@ -1,6 +1,6 @@
-# Rustwalnut build plan
+# Rustsidian build plan
 
-Rustwalnut is an Obsidian-vault-compatible knowledge base written in Rust. This file is the
+Rustsidian is an Obsidian-vault-compatible knowledge base written in Rust. This file is the
 build order and the status ledger. `DECISIONS.md` holds the tradeoffs and measurements.
 Status values are honest: **done** means implemented with passing tests, **partial** means usable
 with listed gaps, **stub** means the interface exists but not the behavior, **not started** means
@@ -14,7 +14,7 @@ L1  vault-core  (uses md-engine)           editor-core (uses md-engine)
 L2  search-core    graph-core    canvas-core    bases-core      (use vault-core)
 L3  ext-api  (commands, events, feature registry, config schemas, scripting)
 L4  plugin-host-wasm        compat-js (optional, separate cdylib)
-L5  walnut-ui  (retained widget tree, taffy layout, CSS styling, render backends)
+L5  rustsidian-ui  (retained widget tree, taffy layout, CSS styling, render backends)
 L6  app  (shell, CLI, IPC, settings, hotkeys, URI handler, packaging)
 ```
 
@@ -31,7 +31,7 @@ L6  app  (shell, CLI, IPC, settings, hotkeys, URI handler, packaging)
 | 6 | `theme-engine`: CSS subset parser, cascade, variables, media queries | parser + cascade tests, fuzz target |
 | 7 | `canvas-core`, `bases-core`, `mermaid-core` | round-trip + snapshot tests |
 | 8 | `ext-api` + scripting + `plugin-host-wasm` | host/guest tests, limits tests |
-| 9 | `walnut-ui` + `app` | headless render snapshot tests, CLI tests |
+| 9 | `rustsidian-ui` + `app` | headless render snapshot tests, CLI tests |
 | 10 | `compat-js`, compat harness, community browser | harness output in PLUGIN_COMPAT.md |
 | 11 | Perf-budget job, CI, packaging, docs, examples | CI config + local bench results |
 
@@ -58,7 +58,7 @@ were not started; steps 9 and 11 are partial.
 | ext-api | partial | Versioned (API v1) JSON call boundary (`Api::call`), `Host` trait implemented by the app (`crates/app/src/plugins.rs`), per-plugin permissions (`vault.read/write`, `editor.read/write`, `ui`), vault-confined paths (dot-folders, `..`, absolute paths and symlink escapes rejected), commands, status-bar/ribbon/notices, per-plugin `data.json`, events (file-open, modify, create, delete, rename, layout-ready), discovery of `.obsidian/plugins/*`, a failing-plugin circuit breaker. 8 tests + 3 app tests. Core features are still not modules behind it, and plugin hotkeys are not read from `hotkeys.json`. |
 | plugin-host-wasm | done (host) | `wasmi` 2.0 (pure Rust, `portable-dispatch`). ABI in the crate docs: exports `alloc`/`on_load`/`on_event`/`run_command`/`on_unload`, import `env.host_call`. Fuel budget per call, wall-clock deadline checked at host calls, 32 MB memory cap, host-call count cap, module size cap; 7 limit/permission tests with hand-written WAT, plus a real Rust example (`examples/plugins/hello-wasm`, 1 KB). Loaded lazily on the second frame; startup to first frame unchanged (30.8 ms headless at 10k notes). Release binary 6.5 MB -> 8.9 MB with the `wasm-plugins` feature (default). A runaway loop with no host calls is bounded by fuel only, not by the clock. |
 | compat-js | not started | Only the engine spike (DECISIONS.md §3). |
-| walnut-ui | partial | Element tree, CSS styling, own flexbox subset (taffy was dropped, DECISIONS.md §7), text shaping/caret/hit queries, software rasterizer; 3 tests incl. pixel checks. No wgpu backend, no accesskit, no transitions applied, no visual-regression snapshot suite. |
+| rustsidian-ui | partial | Element tree, CSS styling, own flexbox subset (taffy was dropped, DECISIONS.md §7), text shaping/caret/hit queries, software rasterizer; 3 tests incl. pixel checks. No wgpu backend, no accesskit, no transitions applied, no visual-regression snapshot suite. |
 | app | partial | Window (winit + softbuffer), workspace view, live preview editor, explorer, tabs, palette, switcher, search panel, outline/backlinks, hotkeys, autosave, CLI (`index search export doctor screenshot commands`); 6 integration tests. See the README checklist for what is missing. |
 
 ## Known constraints of the build machine

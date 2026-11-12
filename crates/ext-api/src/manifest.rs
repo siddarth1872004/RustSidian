@@ -2,7 +2,7 @@ use crate::{Permissions, PluginKind};
 use serde::Deserialize;
 use std::path::Path;
 
-/// `manifest.json` as Obsidian defines it, plus an optional `walnut.permissions` list.
+/// `manifest.json` as Obsidian defines it, plus an optional `rustsidian.permissions` list.
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
@@ -21,17 +21,17 @@ pub struct Manifest {
     #[serde(default)]
     pub is_desktop_only: bool,
     #[serde(default)]
-    pub walnut: WalnutSection,
+    pub rustsidian: RustsidianSection,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
-pub struct WalnutSection {
+pub struct RustsidianSection {
     pub permissions: Option<Vec<String>>,
 }
 
 impl Manifest {
     pub fn permissions(&self, kind: PluginKind) -> Permissions {
-        match (&self.walnut.permissions, kind) {
+        match (&self.rustsidian.permissions, kind) {
             (Some(list), _) => Permissions::from_names(list),
             (None, PluginKind::Wasm) => Permissions::default_set(),
             (None, _) => Permissions::all(),
@@ -135,7 +135,7 @@ mod tests {
         std::fs::create_dir_all(&p).unwrap();
         std::fs::write(
             p.join("manifest.json"),
-            r#"{"id":"hello","name":"Hello","version":"1.0.0","walnut":{"permissions":["vault.write"]}}"#,
+            r#"{"id":"hello","name":"Hello","version":"1.0.0","rustsidian":{"permissions":["vault.write"]}}"#,
         )
         .unwrap();
         std::fs::write(p.join("main.wasm"), b"\0asm").unwrap();

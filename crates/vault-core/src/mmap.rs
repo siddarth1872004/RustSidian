@@ -16,7 +16,7 @@ impl Mapped {
     pub fn open(file: &File) -> io::Result<Mapped> {
         // SAFETY: the mapping is read-only and private to this process, and it lives as long as
         // any note still refers to metadata inside it. The cache file is only ever replaced by an
-        // atomic rename (never truncated or written in place by Rustwalnut), so the mapped bytes
+        // atomic rename (never truncated or written in place by Rustsidian), so the mapped bytes
         // stay valid: a replaced file keeps its inode until the map is dropped. If another
         // program truncated the file underneath us the process could receive SIGBUS; the content
         // is checksummed before use.

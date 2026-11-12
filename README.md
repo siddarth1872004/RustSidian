@@ -1,23 +1,23 @@
-# Rustwalnut
+# Rustsidian
 
 An Obsidian-vault-compatible knowledge base written in Rust: no Electron, no webview, no
 JavaScript in the core. It opens an existing Obsidian vault without migration and keeps its own
-extra data in `.walnut/`.
+extra data in `.rustsidian/`.
 
 **Status: partial.** The headless core (Markdown, vault index, search, graph model, editor model,
 CSS engine, JSON Canvas) and a working desktop shell are implemented and tested. Large parts of
-the original specification are **not implemented**: plugins (WASM and JS), Bases,
-scripting, PDF rendering, the canvas view, packaging. The checklist below is
+the original specification are **not implemented**: Obsidian JS plugin compatibility, Bases, PDF rendering, packaged
+releases. The checklist below is
 the authoritative list; nothing outside it is claimed.
 
 ## Build and run
 
 ```sh
-cargo build --release -p walnut          # 8.9 MB binary at target/release/walnut
-target/release/walnut examples/vault     # open the demo vault in a window
-target/release/walnut help               # CLI: index, search, export, doctor, screenshot, commands
-cargo test --workspace                   # 168 tests
-cargo run --release -p walnut --example perf_budget    # performance gate (headless)
+cargo build --release -p rustsidian          # 12.0 MB binary at target/release/rustsidian
+target/release/rustsidian examples/vault     # open the demo vault in a window
+target/release/rustsidian help               # CLI: index, search, export, doctor, screenshot, commands
+cargo test --workspace                   # 239 tests
+cargo run --release -p rustsidian --example perf_budget    # performance gate (headless)
 scripts/window-budget.sh <vault dir>     # performance gate (needs a display)
 ```
 
@@ -30,15 +30,15 @@ Windows also passes clippy, but **neither has been built, linked or run**.
 
 Release archives (Linux x86_64, Windows x86_64, macOS arm64 and x86_64, with SHA256SUMS.txt) are
 built by `.github/workflows/release.yml` when a `v*` tag is pushed and attached to the GitHub
-Release. No release has been published yet. On Linux, `packaging/walnut.desktop` and
-`packaging/walnut.svg` can be copied to `~/.local/share/applications` and
+Release. No release has been published yet. On Linux, `packaging/rustsidian.desktop` and
+`packaging/rustsidian.svg` can be copied to `~/.local/share/applications` and
 `~/.local/share/icons/hicolor/scalable/apps`.
 
 ## Build from source
 
 ```sh
 git clone https://github.com/siddarth1872004/RustSidian && cd RustSidian
-cargo build --release -p walnut      # target/release/walnut (walnut.exe on Windows)
+cargo build --release -p rustsidian      # target/release/rustsidian (rustsidian.exe on Windows)
 ```
 
 Linux needs only a normal system linker (`build-essential`); Windows needs the MSVC build tools.
@@ -53,16 +53,16 @@ Synthetic vaults from `perf_budget`.
 
 | Budget | Target | Measured | |
 |---|---|---|---|
-| Release binary, stripped | < 15 MB (aim < 10) | 8.9 MB (6.5 MB without the default `wasm-plugins` feature) | met |
+| Release binary, stripped | < 15 MB (aim < 10) | 12.0 MB with the default `wasm-plugins` and `scripting` features (6.5 MB before the plugin stack) | met |
 | Cold start to presented frame, 5,000 notes | < 150 ms | 65–98 ms (worst of 5 runs, three sessions) | met |
 | Cold start to presented frame, 50,000 notes | < 400 ms | 188–260 ms | met |
 | Idle RAM, 10,000 notes | < 80 MB | 34 MB | met |
 | Idle CPU | 0% | 0 CPU ticks over 5 s | met |
 | Keystroke to pixels, 1 MB note | < 8 ms | 4.9 ms median, 6.2 ms p95, 8.7 ms worst seen | met at p95 |
 | Scroll frame, 5 MB note | display rate | 7.4 ms mean (60 Hz needs 16.7 ms; 144 Hz would need 6.9 ms) | met for 60 Hz |
-| Full-text search, 50,000 notes | first results < 30 ms | 8–31 ms depending on query; `line:` queries sit at 29–31 ms | met, except `line:` which is on the line |
+| Full-text search, 50,000 notes | first results < 30 ms | 14–42 ms depending on query; `line:` queries take 40–44 ms and regex queries 36–37 ms (last run; an earlier session measured 8–31 ms with the same search code) | **missed** for `line:` and regex queries |
 | Quick switcher, 50,000 paths | < 5 ms per keystroke | 1.8–2.0 ms | met |
-| Graph, 50,000 nodes at 60 fps | pan/zoom | 33 ms per frame (30 fps) at 50,000 nodes / 600,000 links, 29 ms at 10,000 / 120,000, 1.7 ms for a small vault; CPU rasterizer, links sampled past 8M line pixels; layout tick 26 ms on a worker thread | **missed** |
+| Graph, 50,000 nodes at 60 fps | pan/zoom | 21 ms per frame at 50,000 nodes / 600,000 links, 15.5 ms at 10,000 / 120,000 (single runs), 1.7 ms for a small vault; CPU rasterizer, links sampled past 3M line pixels; layout tick 26 ms on a worker thread | **missed** |
 | Mermaid render | < 50 ms | flowchart/sequence layout + paint inside the 5-7 ms frame | met |
 
 Caveats, stated plainly:
@@ -150,7 +150,7 @@ Caveats, stated plainly:
 | Themes from `.obsidian/themes/`, snippets from `.obsidian/snippets/`, live reload | partial | Loaded and reloaded on change. **No community theme has been tested**; themes that rely on unsupported CSS will apply only in part |
 | Light/dark | partial | Follows `appearance.json` and a toggle command; does not follow the OS setting |
 | Commands with stable ids, rebindable through `hotkeys.json`, key sequences | done | Settings window (`Ctrl+,`, ribbon gear): Editor, Files & links, Appearance (scheme, theme, snippets, font size), Hotkeys (rebind, reset; first binding only), About. Saved to `app.json`, `appearance.json`, `hotkeys.json` with unknown keys kept. Dropdowns cycle on click |
-| Everything else in the customisation section (TOML config, JSON Schema, data-driven layout, theme inspector UI, scripting, feature flags, profiles, portable mode, `--config-dir`) | none | The theme engine has an `inspect` API; no UI uses it |
+| Everything else in the customisation section (TOML config, JSON Schema, data-driven layout, theme inspector UI, feature flags, profiles, portable mode, `--config-dir`) | none | The theme engine has an `inspect` API; no UI uses it |
 
 ### Export, plugins, platform
 
@@ -158,13 +158,14 @@ Caveats, stated plainly:
 |---|---|---|
 | Export HTML, Markdown bundle | done | |
 | Export PDF, print | none | |
-| Native WASM plugins (`.obsidian/plugins/<id>/main.wasm`), `plugins:list`, `plugins:reload`, `community-plugins.json` enable list | partial | wasmi host with fuel/memory limits and a permission model (see `PLUGIN_SDK.md`); example plugin in `examples/plugins/hello-wasm`. No SDK crate, no `walnut plugin` scaffold, no plugin settings UI (the app exposes `App::plugin_list` / `set_plugin_enabled` for it) |
+| Native WASM plugins (`.obsidian/plugins/<id>/main.wasm`), `plugins:list`, `plugins:reload`, `community-plugins.json` enable list | partial | wasmi host with fuel/memory limits and a permission model (see `PLUGIN_SDK.md`); example plugin in `examples/plugins/hello-wasm`. No SDK crate, no `rustsidian plugin` scaffold, no plugin settings UI (the app exposes `App::plugin_list` / `set_plugin_enabled` for it) |
+| User scripts in Rhai (`.obsidian/scripts/*.rhai`) | partial | `scripting` crate on the same API as WASM plugins: commands, events, vault and editor helpers; sandboxed with operation, size and time limits. No hotkeys from `hotkeys.json` |
 | Obsidian JS plugin compatibility, CM6 adapter, community browser | none | Only the JS engine spike was done |
 | Accessibility (`accesskit`), high contrast, reduced motion | none | Keyboard operation works for what exists; there is no screen-reader support |
 | GPU rendering (`wgpu`) | none | Software rendering only, by measured decision (DECISIONS.md §2) |
 | Multi-window, system tray, file dialogs, URI scheme, file associations, single-instance IPC | none | |
 | Packaging (MSI, zip, Flatpak, AppImage, deb, rpm) | none | Release workflow produces tar.gz/zip archives (unrun); `.desktop` file and SVG icon included |
-| `walnut doctor`, `--profile`, perf overlay (Ctrl+Shift+F12) | done | |
+| `rustsidian doctor`, `--profile`, perf overlay (Ctrl+Shift+F12) | done | |
 
 ## Layout
 
@@ -178,8 +179,9 @@ crates/theme-engine  CSS parser, selectors, cascade, values
 crates/canvas-core   JSON Canvas model
 crates/ext-api       extension API: JSON call boundary, permissions, registry
 crates/plugin-host-wasm  sandboxed WASM plugin host (wasmi)
-crates/walnut-ui     element tree, flex layout, software renderer
-crates/app           shell, commands, view, CLI, window  (binary: walnut)
+crates/scripting     Rhai user scripts on ext-api
+crates/rustsidian-ui     element tree, flex layout, software renderer
+crates/app           shell, commands, view, CLI, window  (binary: rustsidian)
 spikes/              the three risk spikes behind DECISIONS.md
 examples/vault/      demo vault
 ```

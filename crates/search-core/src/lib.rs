@@ -1,4 +1,4 @@
-//! Search for Rustwalnut: Obsidian's query language, a parallel full-text scan and fuzzy matching.
+//! Search for Rustsidian: Obsidian's query language, a parallel full-text scan and fuzzy matching.
 
 pub mod engine;
 pub mod fuzzy;

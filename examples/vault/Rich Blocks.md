@@ -20,7 +20,7 @@ def greet(name: str) -> str:
 ```
 
 ```json
-{"name": "walnut", "tags": ["a", "b"], "n": 3.5, "ok": true}
+{"name": "rustsidian", "tags": ["a", "b"], "n": 3.5, "ok": true}
 ```
 
 ```diff

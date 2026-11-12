@@ -73,7 +73,7 @@ mod tests {
     fn reports_debounced_relative_paths() {
         let d = tempfile::tempdir().unwrap();
         fs::create_dir_all(d.path().join("sub")).unwrap();
-        fs::create_dir_all(d.path().join(".walnut")).unwrap();
+        fs::create_dir_all(d.path().join(".rustsidian")).unwrap();
         let (tx, rx) = mpsc::channel();
         let _w = VaultWatcher::start(d.path(), Duration::from_millis(60), move |paths| {
             let _ = tx.send(paths);
@@ -81,7 +81,7 @@ mod tests {
         .unwrap();
         fs::write(d.path().join("sub/a.md"), "1").unwrap();
         fs::write(d.path().join("sub/a.md"), "22").unwrap();
-        fs::write(d.path().join(".walnut/cache"), "ignored").unwrap();
+        fs::write(d.path().join(".rustsidian/cache"), "ignored").unwrap();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         while let Ok(batch) = rx.recv_timeout(Duration::from_secs(5)) {
             seen.extend(batch);
@@ -90,6 +90,6 @@ mod tests {
             }
         }
         assert!(seen.contains("sub/a.md"), "{seen:?}");
-        assert!(!seen.iter().any(|p| p.starts_with(".walnut")));
+        assert!(!seen.iter().any(|p| p.starts_with(".rustsidian")));
     }
 }

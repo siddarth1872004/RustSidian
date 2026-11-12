@@ -1,7 +1,7 @@
 use ext_api::{Api, Event, Extension, Permissions, PluginInfo};
+use rustsidian_app::App;
 use serde_json::json;
 use std::fs;
-use walnut_app::App;
 
 struct Demo(PluginInfo);
 

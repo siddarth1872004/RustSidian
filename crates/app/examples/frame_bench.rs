@@ -1,9 +1,9 @@
-//! `cargo run --release -p walnut --example frame_bench -- <vault> <note>`
+//! `cargo run --release -p rustsidian --example frame_bench -- <vault> <note>`
 //! Keystroke-to-pixels cost in the application: type a character, then build, style, lay out
 //! and rasterize the whole 1280x800 window (what the window loop does per keystroke).
+use rustsidian_app::{render, App, Key};
+use rustsidian_ui::{Fonts, Pixmap};
 use std::time::{Duration, Instant};
-use walnut_app::{render, App, Key};
-use walnut_ui::{Fonts, Pixmap};
 
 fn main() {
     let mut args = std::env::args().skip(1);

@@ -1857,6 +1857,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustsidian"
+version = "0.1.0"
+dependencies = [
+ "canvas-core",
+ "editor-core",
+ "ext-api",
+ "graph-core",
+ "highlight-core",
+ "math-core",
+ "md-engine",
+ "mermaid-core",
+ "plugin-host-wasm",
+ "rustsidian-ui",
+ "scripting",
+ "search-core",
+ "serde_json",
+ "softbuffer",
+ "tempfile",
+ "theme-engine",
+ "vault-core",
+ "winit",
+]
+
+[[package]]
+name = "rustsidian-ui"
+version = "0.1.0"
+dependencies = [
+ "cosmic-text",
+ "rayon",
+ "theme-engine",
+ "tiny-skia",
+]
+
+[[package]]
 name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2473,40 +2507,6 @@ checksum = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b"
 dependencies = [
  "same-file",
  "winapi-util",
-]
-
-[[package]]
-name = "walnut"
-version = "0.1.0"
-dependencies = [
- "canvas-core",
- "editor-core",
- "ext-api",
- "graph-core",
- "highlight-core",
- "math-core",
- "md-engine",
- "mermaid-core",
- "plugin-host-wasm",
- "scripting",
- "search-core",
- "serde_json",
- "softbuffer",
- "tempfile",
- "theme-engine",
- "vault-core",
- "walnut-ui",
- "winit",
-]
-
-[[package]]
-name = "walnut-ui"
-version = "0.1.0"
-dependencies = [
- "cosmic-text",
- "rayon",
- "theme-engine",
- "tiny-skia",
 ]
 
 [[package]]

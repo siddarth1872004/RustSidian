@@ -3,4 +3,4 @@
 **/target
 *.snap.new
 /perf-vaults
-.walnut/
+.rustsidian/

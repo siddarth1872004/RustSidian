@@ -1,4 +1,4 @@
-//! Vault model for Rustwalnut.
+//! Vault model for Rustsidian.
 
 pub mod cache;
 pub mod config;

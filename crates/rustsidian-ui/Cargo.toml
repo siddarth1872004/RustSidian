@@ -1,5 +1,5 @@
 [package]
-name = "walnut-ui"
+name = "rustsidian-ui"
 description = "Retained UI toolkit: CSS-styled element tree, taffy layout, display list, software renderer"
 version.workspace = true
 edition.workspace = true

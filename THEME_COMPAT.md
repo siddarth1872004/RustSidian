@@ -5,7 +5,7 @@ effect of a theme can be predicted; it is not a list of verified themes.
 
 Themes are read from `.obsidian/themes/<name>/theme.css` (the name in `appearance.json` →
 `cssTheme`), snippets from `.obsidian/snippets/<name>.css` (those in `enabledCssSnippets`). Order:
-built-in base, theme, snippets. Files are reloaded when they change. `walnut doctor <vault>` lists
+built-in base, theme, snippets. Files are reloaded when they change. `rustsidian doctor <vault>` lists
 how many constructs in each enabled snippet were not understood.
 
 ## Supported CSS

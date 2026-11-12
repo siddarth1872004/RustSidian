@@ -19,7 +19,7 @@ list unbinds the command. `Mod` means Ctrl.
 Default bindings may be key sequences internally (`Ctrl+K Ctrl+S` style); `hotkeys.json` entries
 are single chords. Changes are picked up when the file is saved. There is no visual editor.
 
-`walnut commands` prints every command id with its default binding. All of them are also
+`rustsidian commands` prints every command id with its default binding. All of them are also
 reachable from the command palette (Ctrl+P).
 
 ## Appearance

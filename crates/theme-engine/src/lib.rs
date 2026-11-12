@@ -1,4 +1,4 @@
-//! CSS subset engine for Rustwalnut themes and snippets.
+//! CSS subset engine for Rustsidian themes and snippets.
 //!
 //! Supported: type/class/id/attribute selectors, `:hover :focus :active :disabled :checked
 //! :first-child :last-child :root :not() :is() :where()`, all four combinators, specificity,

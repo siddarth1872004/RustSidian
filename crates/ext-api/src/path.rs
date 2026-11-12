@@ -1,7 +1,7 @@
 use std::path::Path;
 
 /// Normalise a vault-relative path and reject anything that could leave the vault or touch
-/// app-private folders (`.obsidian`, `.walnut`, `.git`, `.trash`: every dot-component).
+/// app-private folders (`.obsidian`, `.rustsidian`, `.git`, `.trash`: every dot-component).
 pub fn safe_rel(p: &str) -> Result<String, String> {
     if p.contains('\0') || p.contains('\\') || p.starts_with('/') || p.contains(':') {
         return Err(format!("invalid path: {p:?}"));

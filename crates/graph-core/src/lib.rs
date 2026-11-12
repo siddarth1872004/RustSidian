@@ -1,4 +1,4 @@
-//! Note graphs for Rustwalnut.
+//! Note graphs for Rustsidian.
 
 pub mod layout;
 pub mod model;

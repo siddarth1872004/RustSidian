@@ -1,4 +1,4 @@
-//! Example Rustwalnut WASM plugin: no dependencies, no_std.
+//! Example Rustsidian WASM plugin: no dependencies, no_std.
 //! Build: `cargo build --release --target wasm32-unknown-unknown`, then copy
 //! `target/wasm32-unknown-unknown/release/hello_wasm.wasm` to `main.wasm` next to `manifest.json`.
 #![no_std]

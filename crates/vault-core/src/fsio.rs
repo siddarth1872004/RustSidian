@@ -40,7 +40,7 @@ pub fn atomic_write(path: &Path, data: &[u8]) -> io::Result<()> {
     fs::create_dir_all(dir)?;
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("file");
     let tmp = dir.join(format!(
-        ".{name}.walnut-tmp-{}-{}",
+        ".{name}.rustsidian-tmp-{}-{}",
         std::process::id(),
         COUNTER.fetch_add(1, Ordering::Relaxed)
     ));
@@ -202,7 +202,7 @@ pub fn fold64(data: &[u8]) -> u64 {
     h ^ (h >> 32)
 }
 
-/// File recovery: periodic snapshots of note content under `.walnut/recovery/`.
+/// File recovery: periodic snapshots of note content under `.rustsidian/recovery/`.
 pub struct Recovery {
     dir: PathBuf,
     /// Minimum time between two snapshots of the same file.
@@ -220,7 +220,7 @@ pub struct Snapshot {
 impl Recovery {
     pub fn new(vault_root: &Path) -> Recovery {
         Recovery {
-            dir: vault_root.join(".walnut/recovery"),
+            dir: vault_root.join(".rustsidian/recovery"),
             interval_ms: 5 * 60_000,
             keep_ms: 7 * 86_400_000,
         }
