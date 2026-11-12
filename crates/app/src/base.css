@@ -126,6 +126,21 @@ body {
 .graph-control { padding: 1px 8px; border-radius: 10px; border: 1px solid var(--background-modifier-border); color: var(--text-faint); white-space: nowrap }
 .graph-control:hover { color: var(--text-normal) }
 .graph-control.is-enabled { color: var(--text-normal); background-color: var(--background-modifier-hover) }
+body { --canvas-color-1: 233, 49, 71; --canvas-color-2: 233, 151, 63; --canvas-color-3: 224, 222, 113; --canvas-color-4: 68, 207, 110; --canvas-color-5: 83, 223, 221; --canvas-color-6: 168, 130, 255 }
+.canvas-wrapper { padding: 0; overflow: hidden; background-color: var(--canvas-background, var(--background-primary)) }
+.canvas-view-colors { display: none }
+.canvas-view.color-node { color: var(--canvas-node-background, var(--background-primary-alt)) }
+.canvas-view.color-border { color: var(--background-modifier-border-hover, var(--background-modifier-border)) }
+.canvas-view.color-text { color: var(--text-normal) }
+.canvas-view.color-faint { color: var(--text-faint) }
+.canvas-view.color-edge { color: var(--canvas-edge-color, var(--text-faint)) }
+.canvas-view.color-accent { color: var(--interactive-accent) }
+.canvas-view.color-1 { color: rgb(var(--canvas-color-1)) }
+.canvas-view.color-2 { color: rgb(var(--canvas-color-2)) }
+.canvas-view.color-3 { color: rgb(var(--canvas-color-3)) }
+.canvas-view.color-4 { color: rgb(var(--canvas-color-4)) }
+.canvas-view.color-5 { color: rgb(var(--canvas-color-5)) }
+.canvas-view.color-6 { color: rgb(var(--canvas-color-6)) }
 .graph-view-container { padding: 0; overflow: hidden }
 .graph-view-colors { display: none }
 .graph-view.color-fill { color: var(--text-muted) }

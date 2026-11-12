@@ -497,3 +497,50 @@ fn graph_view() {
     assert_eq!(g.local.as_deref(), Some("dir/Second.md"));
     assert_eq!(g.graph.nodes.len(), 2);
 }
+
+#[test]
+fn canvas_view() {
+    let d = vault();
+    let w = |p: &str, t: &str| fs::write(d.path().join(p), t).unwrap();
+    w(
+        "Board.canvas",
+        r##"{"nodes":[{"id":"a","type":"text","x":0,"y":0,"width":200,"height":100,"text":"# Hi","extra":1},{"id":"b","type":"file","file":"Home.md","x":400,"y":0,"width":200,"height":100,"color":"#ff0000"}],"edges":[{"id":"e","fromNode":"a","toNode":"b","label":"x"}],"keep":true}"##,
+    );
+    let mut app = App::open(d.path()).unwrap();
+    app.open_note("Home");
+    app.run("open:Board.canvas");
+    assert!(app.canvas_active() && app.tab().is_none());
+    let mut fonts = Fonts::new();
+    let mut pm = Pixmap::new(900, 600).unwrap();
+    let frame = render(&mut app, &mut fonts, &mut pm, 1.0);
+    let pane = frame.dom.nodes[frame.info.canvas.unwrap()].rect;
+
+    typed(&mut app, "zzz");
+    assert!(!app.tabs[0].editor.buf.is_modified());
+
+    let v = app.canvas_view.as_ref().unwrap();
+    let (x, y) = v.to_screen(&pane, 100.0, 50.0);
+    let zoom = v.zoom;
+    app.wheel(&frame, x, y, -3.0);
+    let v = app.canvas_view.as_ref().unwrap();
+    assert!(v.zoom > zoom && !v.auto_fit);
+    let (x2, y2) = v.to_screen(&pane, 100.0, 50.0);
+    assert!((x2 - x).abs() < 0.5 && (y2 - y).abs() < 0.5);
+
+    app.click(&frame, &mut fonts, x2, y2, false);
+    app.drag(&frame, &mut fonts, x2 + 30.0, y2);
+    app.release();
+    let n = app.canvas_view.as_ref().unwrap().canvas.node("a").unwrap().x;
+    assert!(n > 0.0);
+    let saved = fs::read_to_string(d.path().join("Board.canvas")).unwrap();
+    assert!(saved.contains("\"extra\":1") && saved.contains("\"keep\":true"), "{saved}");
+
+    app.run("canvas:add-text");
+    typed(&mut app, "new");
+    app.key(key("Escape"));
+    assert_eq!(app.canvas_view.as_ref().unwrap().canvas.nodes.len(), 3);
+    assert!(fs::read_to_string(d.path().join("Board.canvas")).unwrap().contains("\"text\":\"new\""));
+    app.run("canvas:delete-selected");
+    assert_eq!(app.canvas_view.as_ref().unwrap().canvas.nodes.len(), 2);
+    render(&mut app, &mut fonts, &mut pm, 1.0);
+}

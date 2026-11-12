@@ -136,7 +136,7 @@ Caveats, stated plainly:
 | Outline, backlinks (linked), word count | done | No unlinked mentions, outgoing-links or tags panes |
 | Daily notes, random note | partial | Daily note uses the UTC date and `YYYY-MM-DD`; custom formats and templates are not supported |
 | Graph view | partial | Global and local graph (depth 1-3) in the main pane: pan, zoom about the pointer, drag nodes, hover highlight, click to open (unresolved creates the note, tags search). Filters and arrows as header chips, read from and saved to `graph.json`; search filter and color groups from `graph.json` are applied but have no UI. No force sliders, no layout cache on disk, dense graphs draw a sample of links |
-| Canvas view | none | `canvas-core` reads, edits and writes `.canvas` losslessly; nothing draws it |
+| Canvas view | done | Text/file/link/group nodes, colors, curved edges with arrows and labels; pan, wheel zoom, move, resize, double-click to edit text, add/delete node, lossless save. No edge editing; file nodes show a text preview |
 | Bookmarks, tags pane, properties view, periodic notes, templates, unique note creator, slides, format converter, audio recorder, footnotes view | none | |
 | Bases | none | |
 

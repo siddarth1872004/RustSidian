@@ -50,7 +50,7 @@ were not started; steps 9 and 11 are partial.
 | graph-core | done (headless part) | Global/local graph, depth, all filters, color groups, forces, pin, `graph.json` round trip, layout disk format; 10 tests. Barnes-Hut tick 3 / 5 / 26 ms at 1k / 10k / 50k nodes. GPU instanced rendering and LOD labels belong to the UI layer. |
 | editor-core | done (model) | Rope buffer with incremental parse, transactions, undo tree with branches, multi-cursor, smart lists, auto-pair, indent, formatting toggles, folding, source/live-preview decorations, table grid editing, vim subset (documented in `vim.rs`); 30 unit tests + property test. Keystroke: 55 µs at 1 MB, 273 µs at 5 MB (edit + re-parse + viewport decorations). Spellcheck is a hook only; drag/drop and paste of files are UI-layer work. |
 | theme-engine | done (engine) | Parser, selectors, cascade, `var()`, `calc()`, media queries, shorthands, transitions (parse + easing), inspector; 15 unit tests + never-panic property tests (40k cases). Supported/unsupported subset is listed in the crate docs. Loading `.obsidian/themes` and snippets with live reload is app-layer work. |
-| canvas-core | done (model) | JSON Canvas parse/edit/write with lossless round trip (unknown fields, key order, Obsidian's layout); 3 tests. No canvas view. |
+| canvas-core | done | JSON Canvas parse/edit/write with lossless round trip (unknown fields, key order, Obsidian's layout); 3 tests. View in `app/canvasview.rs`. |
 | bases-core | not started | Crate does not exist. |
 | mermaid-core | not started | Crate does not exist. No Rust Mermaid crates were evaluated. |
 | ext-api | not started | Commands have stable ids inside `app`, but there is no extension API and core features are not modules behind one. |
@@ -75,7 +75,7 @@ The machine this was developed on has no C compiler, no `pkg-config` and no root
 1. Done: lazy metadata decode from the mapped index (idle RAM 34 MB, see DECISIONS §9).
 2. Done in part: quote, callout, table, note-embed and PNG image widgets. Left: other image formats, math, Mermaid, measured table columns.
 3. Done: folding, table editing and vim keys wired into the editor.
-3b. Graph view: done on the CPU rasterizer (30 fps at 50k nodes; `wgpu` still needed for 60). Canvas view on top of the existing model: not started.
+3b. Graph view: done on the CPU rasterizer (30 fps at 50k nodes; `wgpu` still needed for 60). Canvas view: done on the CPU rasterizer (pan, zoom, move, resize, edit text, save).
 4. `ext-api`, then move built-in features behind it; scripting; `plugin-host-wasm`.
 5. `mermaid-core`, math rendering, syntax highlighting, PDF.
 6. `compat-js` and the compatibility harness.

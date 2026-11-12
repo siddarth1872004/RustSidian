@@ -1,5 +1,6 @@
 //! Rustwalnut application library: state, commands, view construction and headless rendering.
 
+pub mod canvasview;
 pub mod cli;
 pub mod editing;
 pub mod graphview;
@@ -29,6 +30,7 @@ pub fn render(app: &mut App, fonts: &mut Fonts, pixmap: &mut Pixmap, scale: f32)
     dom.layout(fonts, pixmap.width() as f32 / scale, pixmap.height() as f32 / scale);
     view::add_carets(app, &mut dom, &info, fonts);
     view::add_graph(app, &mut dom, &info);
+    canvasview::add_canvas(app, &mut dom, &info);
     let scene = dom.paint();
     let clear = dom.nodes[0].style.background;
     walnut_ui::render(&scene, fonts, pixmap, scale, clear);
@@ -52,6 +54,9 @@ impl App {
             }
             return;
         }
+        if self.canvas_click(frame, x, y) {
+            return;
+        }
         if let Some(off) = view::offset_at(&frame.dom, &frame.info, fonts, x, y) {
             self.focus = shell::Focus::Editor;
             if let Some(t) = self.tab_mut() {
@@ -65,6 +70,9 @@ impl App {
     pub fn drag(&mut self, frame: &Frame, fonts: &mut Fonts, x: f32, y: f32) {
         if let (Some(rect), Some(g)) = (graph_rect(frame), &mut self.graph_view) {
             return g.drag(&rect, x, y);
+        }
+        if self.canvas_drag(frame, x, y) {
+            return;
         }
         if let Some(off) = view::offset_at(&frame.dom, &frame.info, fonts, x, y) {
             if let Some(t) = self.tab_mut() {
@@ -81,6 +89,9 @@ impl App {
                 return g.wheel(&rect, x, y, lines / 3.0);
             }
         }
+        if self.canvas_wheel(frame, x, y, lines) {
+            return;
+        }
         let Some(node) = frame.dom.scroller_at(x, y) else { return };
         if Some(node) == frame.info.editor {
             return self.scroll_editor(lines.round() as isize);
@@ -96,6 +107,7 @@ impl App {
         if let Some(kind) = self.graph_view.as_mut().and_then(graphview::GraphView::release) {
             self.graph_clicked(kind);
         }
+        self.canvas_release();
     }
 
     /// The pointer moved with no button held. Returns true when the frame must be redrawn.
