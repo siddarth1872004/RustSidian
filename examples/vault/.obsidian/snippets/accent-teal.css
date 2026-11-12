@@ -1,0 +1,3 @@
+/* Demo snippet: change the accent hue and round the active file row more. */
+body { --accent-h: 172; --accent-s: 70%; --accent-l: 45% }
+.nav-file-title.is-active { border-radius: 10px }

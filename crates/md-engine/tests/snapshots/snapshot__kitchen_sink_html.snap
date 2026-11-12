@@ -1,0 +1,40 @@
+---
+source: crates/md-engine/tests/snapshot.rs
+expression: "md_engine::html::render(&doc, KITCHEN_SINK)"
+---
+<h1 data-heading="Heading one">Heading <em>one</em></h1>
+<p>Para with <a class="internal-link" data-href="Note#Sec" href="Note#Sec">alias</a>, <span class="internal-embed" src="img.png"></span>, <a class="tag" href="#tag/sub">#tag/sub</a>, <mark>hi</mark>, <del>no</del>, <code>code</code>, <span class="math math-inline">x</span> and a footnote<sup class="footnote-ref"><a href="#fn-n">[n]</a></sup>.</p>
+<div class="callout" data-callout="tip" data-callout-fold="+">
+<div class="callout-title">Title</div>
+<div class="callout-content">
+<ul class="contains-task-list">
+<li class="task-list-item is-checked" data-task="x"><input type="checkbox" class="task-list-item-checkbox" checked> done</li>
+<li class="task-list-item" data-task=" "><input type="checkbox" class="task-list-item-checkbox"> todo</li>
+</ul>
+</div>
+</div>
+<table>
+<thead>
+<tr><th>a</th><th style="text-align:center">b</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td style="text-align:center"><strong>2</strong></td></tr>
+</tbody>
+</table>
+<pre><code class="language-mermaid">graph TD; A--&gt;B
+</code></pre>
+<ol>
+<li><p>one</p>
+</li>
+<li><p>two
+continued</p>
+<p>second para</p>
+</li>
+</ol>
+<div class="math math-block">E = mc^2</div>
+<section class="footnotes">
+<hr>
+<ol>
+<li id="fn-n"><p>Footnote text</p></li>
+</ol>
+</section>

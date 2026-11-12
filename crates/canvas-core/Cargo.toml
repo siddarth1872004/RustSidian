@@ -1,0 +1,12 @@
+[package]
+name = "canvas-core"
+description = "JSON Canvas (.canvas) model: read, edit, write, preserving unknown fields"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }

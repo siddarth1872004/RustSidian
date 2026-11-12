@@ -1,0 +1,16 @@
+[package]
+name = "editor-core"
+description = "Editor model: rope buffer, transactions, undo tree, multi-cursor, folding, live-preview decorations, vim"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+md-engine = { path = "../md-engine" }
+ropey = "1.6"
+
+[dev-dependencies]
+proptest = "1"

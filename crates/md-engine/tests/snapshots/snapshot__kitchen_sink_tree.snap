@@ -1,0 +1,69 @@
+---
+source: crates/md-engine/tests/snapshot.rs
+expression: doc.dump(KITCHEN_SINK)
+---
+FrontMatter "title: Demo\ntags: [a, b]\n"
+Heading h1
+  Text "Heading "
+  Emph
+    Text "one"
+Paragraph
+  Text "Para with "
+  WikiLink target="Note" subpath="Sec" alias="alias" embed=false
+  Text ", "
+  WikiLink target="img.png" subpath="" alias="" embed=true
+  Text ", "
+  Tag "#tag/sub"
+  Text ", "
+  Highlight
+    Text "hi"
+  Text ", "
+  Strike
+    Text "no"
+  Text ", "
+  Code "code"
+  Text ", "
+  InlineMath display=false "x"
+  Text " and a footnote"
+  FootnoteRef label="n"
+  Text "."
+  BlockId id="para-1"
+Callout kind="tip" fold=Open title="Title"
+  Heading h0
+    Text "Title"
+  List ordered=false start=0 tight=true
+    ListItem task='x'
+      Paragraph
+        Text "done"
+    ListItem task=' '
+      Paragraph
+        Text "todo"
+Table
+  TableRow header
+    TableCell None
+      Text "a"
+    TableCell Center
+      Text "b"
+  TableRow
+    TableCell None
+      Text "1"
+    TableCell Center
+      Strong
+        Text "2"
+CodeBlock info="mermaid" "graph TD; A-->B\n"
+List ordered=true start=1 tight=false
+  ListItem
+    Paragraph
+      Text "one"
+  ListItem
+    Paragraph
+      Text "two"
+      SoftBreak
+      Text "continued"
+    Paragraph
+      Text "second para"
+FootnoteDef label="n"
+  Paragraph
+    Text "Footnote text"
+CommentBlock "%%\nhidden\n%%"
+MathBlock "\nE = mc^2\n"

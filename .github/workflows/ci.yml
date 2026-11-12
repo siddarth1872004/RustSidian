@@ -1,0 +1,79 @@
+# NOTE: written on a machine without access to GitHub Actions; this workflow has not been run.
+name: ci
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --workspace
+      - name: Property tests with more cases
+        run: cargo test --release -p md-engine -p vault-core -p editor-core -p theme-engine
+        env:
+          PROPTEST_CASES: 20000
+
+  perf-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release -p walnut
+      - name: Binary size gate (15 MB)
+        run: |
+          size=$(stat -c %s target/release/walnut)
+          echo "walnut: $size bytes"
+          test "$size" -le 15728640
+      - name: Headless performance budgets (1k, 10k, 50k synthetic vaults)
+        run: cargo run --release -p walnut --example perf_budget -- --sizes 1000,10000,50000
+      - name: Window budgets under a virtual display (cold start, idle RAM, idle CPU)
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          cargo run --release -p walnut --example perf_budget -- --dir "$RUNNER_TEMP/v" --sizes 5000,10000,50000 --report-only
+          xvfb-run -a scripts/window-budget.sh "$RUNNER_TEMP/v"
+
+  package:
+    needs: [lint, test]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: walnut-linux-x64.tar.gz
+          - os: windows-latest
+            artifact: walnut-windows-x64.zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release -p walnut
+      - name: Archive (Linux)
+        if: runner.os == 'Linux'
+        run: tar czf ${{ matrix.artifact }} -C target/release walnut
+      - name: Archive (Windows portable zip)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path target/release/walnut.exe -DestinationPath ${{ matrix.artifact }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}

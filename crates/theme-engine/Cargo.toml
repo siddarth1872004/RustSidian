@@ -1,0 +1,14 @@
+[package]
+name = "theme-engine"
+description = "CSS subset engine: parser, selectors, cascade, custom properties, values"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+proptest = "1"

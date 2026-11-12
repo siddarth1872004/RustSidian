@@ -1,0 +1,15 @@
+[package]
+name = "graph-core"
+description = "Global and local note graphs: construction, filters, color groups, force layout"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+vault-core = { path = "../vault-core" }
+search-core = { path = "../search-core" }
+serde_json = { version = "1", features = ["preserve_order"] }
+rayon = "1"

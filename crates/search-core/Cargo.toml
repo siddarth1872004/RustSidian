@@ -1,0 +1,20 @@
+[package]
+name = "search-core"
+description = "Obsidian search query language, full-text scan, fuzzy quick switcher"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+vault-core = { path = "../vault-core" }
+md-engine = { path = "../md-engine" }
+rayon = "1"
+memchr = "2"
+regex = { version = "1", default-features = false, features = ["std", "perf", "unicode-case", "unicode-perl"] }
+nucleo-matcher = "0.3"
+
+[dev-dependencies]
+tempfile = "3"

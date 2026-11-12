@@ -1,0 +1,20 @@
+[package]
+name = "vault-core"
+description = "Vault model: file IO, metadata cache, link resolution, rename propagation, persisted index"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+md-engine = { path = "../md-engine" }
+rayon = "1"
+memmap2 = "0.9"
+notify = { version = "8", default-features = false }
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
