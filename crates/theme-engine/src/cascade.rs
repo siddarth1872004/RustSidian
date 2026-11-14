@@ -324,7 +324,22 @@ impl Theme {
         parent: Option<&Computed>,
         inline: Option<&str>,
     ) -> Computed {
-        let matched = self.matching(e, env, classes);
+        self.compute_matched(&self.matching(e, env, classes), parent, inline)
+    }
+
+    /// The rules that apply to an element, in cascade order, as opaque keys. Two elements with
+    /// the same keys, inline style and parent computed style get the same computed style.
+    pub fn matched_rules<E: Element>(&self, e: &E, classes: &[&str], env: Env) -> Vec<(u16, u32, u32)> {
+        self.matching(e, env, classes)
+    }
+
+    /// The computed style for rules found by [`Theme::matched_rules`].
+    pub fn compute_matched(
+        &self,
+        matched: &[(u16, u32, u32)],
+        parent: Option<&Computed>,
+        inline: Option<&str>,
+    ) -> Computed {
         // Declarations in cascade order: normal ones first, then `!important` ones.
         let mut normal: Vec<(Box<str>, Box<str>)> = Vec::new();
         let mut important: Vec<(Box<str>, Box<str>)> = Vec::new();

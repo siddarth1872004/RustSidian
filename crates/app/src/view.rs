@@ -1,6 +1,7 @@
 //! Builds the element tree for the current application state, and maps editor geometry
 //! (carets, selections, clicks) between source offsets and what is displayed.
 
+use crate::icons;
 use crate::shell::{App, Focus, Panel, PromptKind, ViewMode};
 use editor_core::deco::{decorate, Deco, Style as Deco_};
 use editor_core::Sel;
@@ -299,12 +300,16 @@ pub fn block_display(
 }
 
 fn sidebar_files(app: &App, dom: &mut Dom, parent: NodeId, viewport_h: f32) {
+    let header = dom.add(parent, El::div().class("nav-header"));
     dom.add(
-        parent,
+        header,
         El::div()
-            .class("nav-header")
+            .class("nav-header-title")
             .text(app.store.root.file_name().and_then(|n| n.to_str()).unwrap_or("Vault").to_string()),
     );
+    for (icon, cmd) in [("note-plus", "file-explorer:new-file"), ("collapse", "file-explorer:collapse-all")] {
+        icon_button(dom, header, icon, cmd, false);
+    }
     let list = dom.add(parent, El::div().class("nav-files-container").id("files"));
     // Virtualised: fixed-height rows, only those in view are built; spacers keep the scroll range.
     let rows = app.tree_rows();
@@ -317,20 +322,24 @@ fn sidebar_files(app: &App, dom: &mut Dom, parent: NodeId, viewport_h: f32) {
         dom.add(list, El::div().style(&format!("height: {}px", first as f32 * h)));
     }
     for r in &rows[first..last] {
-        let pad = 8 + r.depth * 14 + if r.folder { 0 } else { 12 };
+        let pad = 6 + r.depth * 14 + if r.folder { 0 } else { 18 };
         let el = if r.folder {
-            El::div()
-                .class("nav-folder-title")
-                .text(format!("{} {}", if r.collapsed { "▸" } else { "▾" }, r.label))
-                .action(format!("toggle-folder:{}", r.path))
+            El::div().class("nav-folder-title").action(format!("toggle-folder:{}", r.path))
         } else {
             El::div()
                 .class("nav-file-title")
                 .class_if(active.is_some_and(|a| a.eq_ignore_ascii_case(&r.path)), "is-active")
-                .text(r.label.clone())
                 .action(format!("open:{}", r.path))
         };
-        dom.add(list, el.style(&format!("padding-left: {pad}px")));
+        let row = dom.add(list, el.style(&format!("padding-left: {pad}px")));
+        if r.folder {
+            let chevron = if r.collapsed { "chevron-right" } else { "chevron-down" };
+            dom.add(row, icons::el(chevron).class("nav-folder-collapse-indicator"));
+            dom.add(row, icons::el("folder"));
+        } else {
+            dom.add(row, icons::el(icons::for_file(&r.path)));
+        }
+        dom.add(row, El::div().class("nav-file-title-content").text(r.label.clone()));
     }
     if last < rows.len() {
         dom.add(list, El::div().style(&format!("height: {}px", (rows.len() - last) as f32 * h)));
@@ -338,7 +347,7 @@ fn sidebar_files(app: &App, dom: &mut Dom, parent: NodeId, viewport_h: f32) {
 }
 
 fn sidebar_search(app: &App, dom: &mut Dom, parent: NodeId) {
-    dom.add(parent, El::div().class("nav-header").text("Search"));
+    section_header(dom, parent, "search", "Search");
     let caret = if app.focus == Focus::Search { "▏" } else { "" };
     let shown = if app.search_query.is_empty() && app.focus != Focus::Search {
         "Type a query, press Enter".to_string()
@@ -372,7 +381,7 @@ fn sidebar_search(app: &App, dom: &mut Dom, parent: NodeId) {
 
 fn right_sidebar(app: &App, dom: &mut Dom, parent: NodeId) {
     let Some(tab) = app.tab() else { return };
-    dom.add(parent, El::div().class("nav-header").text("Outline"));
+    section_header(dom, parent, "list", "Outline");
     let outline = dom.add(parent, El::div().class("pane-section"));
     for h in tab.meta.iter().flat_map(|(_, m)| &m.headings) {
         dom.add(
@@ -383,7 +392,7 @@ fn right_sidebar(app: &App, dom: &mut Dom, parent: NodeId) {
                 .text(h.text.to_string()),
         );
     }
-    dom.add(parent, El::div().class("nav-header").text("Backlinks"));
+    section_header(dom, parent, "link", "Backlinks");
     let back = dom.add(parent, El::div().class("pane-section"));
     if let Some(id) = app.store.index.id(&tab.path) {
         // The link graph is cached by the index; cloning the Arc is cheap.
@@ -405,12 +414,7 @@ fn right_sidebar(app: &App, dom: &mut Dom, parent: NodeId) {
 
 fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut ViewInfo) {
     let Some(tab) = app.tab() else {
-        dom.add(
-            parent,
-            El::div()
-                .class("empty-state")
-                .text("No file is open. Ctrl+O opens the quick switcher, Ctrl+P the command palette."),
-        );
+        empty_state(app, dom, parent);
         return;
     };
     let mode_label = match tab.mode {
@@ -418,10 +422,17 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
         ViewMode::LivePreview => "live preview",
         ViewMode::Reading => "reading",
     };
+    let header = dom.add(parent, El::div().class("view-header"));
+    icon_button(dom, header, "arrow-left", "app:go-back", false);
+    icon_button(dom, header, "arrow-right", "app:go-forward", false);
     dom.add(
-        parent,
-        El::div().class("view-header").text(format!("{}  ·  {mode_label}", path::strip_md(&tab.path))),
+        header,
+        El::div().class("view-header-title").text(format!("{}  ·  {mode_label}", path::strip_md(&tab.path))),
     );
+    let (mode_icon, source_icon) = (if tab.mode == ViewMode::Reading { "edit" } else { "book" }, "code");
+    icon_button(dom, header, source_icon, "editor:toggle-source", tab.mode == ViewMode::Source);
+    icon_button(dom, header, mode_icon, "markdown:toggle-preview", false);
+    icon_button(dom, header, "sidebar-right", "app:toggle-right-sidebar", app.right_open);
     let class = if tab.mode == ViewMode::Reading {
         "view-content markdown-reading-view"
     } else {
@@ -430,7 +441,12 @@ fn editor(app: &App, dom: &mut Dom, parent: NodeId, pal: &Palette, info: &mut Vi
     let readable =
         if app.config.app.bool("readableLineLength", false) { " is-readable-line-width" } else { "" };
     let class = format!("{class}{readable}");
-    let view = dom.add(parent, El::div().class(&class).id("editor"));
+    let fade = app.anims.t("view");
+    let mut view_el = El::div().class(&class).id("editor");
+    if fade < 1.0 {
+        view_el = view_el.style(&format!("opacity: {:.3}", 0.25 + 0.75 * fade));
+    }
+    let view = dom.add(parent, view_el);
     info.editor = Some(view);
     let buf = &tab.editor.buf;
     let doc = buf.doc();
@@ -797,6 +813,84 @@ fn embeds(app: &App, dom: &mut Dom, view: NodeId, source: &str, tree: &md_engine
     }
 }
 
+/// Set the hover flag on every element with the hovered action, and on its ancestors.
+pub fn mark_hover(dom: &mut Dom, action: Option<&str>) {
+    let Some(action) = action else { return };
+    let hits: Vec<NodeId> =
+        (0..dom.nodes.len()).filter(|&i| dom.nodes[i].el.action.as_deref() == Some(action)).collect();
+    for id in hits {
+        let mut cur = Some(id);
+        while let Some(c) = cur {
+            dom.nodes[c].hover = true;
+            cur = dom.nodes[c].parent;
+        }
+    }
+}
+
+/// A small square button that shows one icon.
+fn icon_button(dom: &mut Dom, parent: NodeId, icon: &str, cmd: &str, active: bool) {
+    let b = dom.add(parent, El::div().class("clickable-icon").class_if(active, "is-active").action(cmd));
+    dom.add(b, icons::el(icon));
+}
+
+fn section_header(dom: &mut Dom, parent: NodeId, icon: &str, title: &str) {
+    let header = dom.add(parent, El::div().class("nav-header"));
+    dom.add(header, icons::el(icon));
+    dom.add(header, El::div().class("nav-header-title").text(title));
+}
+
+/// Shown in the main pane when no note is open: what to do next, with the hotkeys.
+fn empty_state(app: &App, dom: &mut Dom, parent: NodeId) {
+    let wrap = dom.add(parent, El::div().class("empty-state"));
+    let card = dom.add(wrap, El::div().class("empty-state-container"));
+    dom.add(card, El::div().class("empty-state-logo").image(logo()));
+    dom.add(card, El::div().class("empty-state-title").text("No file is open"));
+    let notes = app.store.index.notes().count();
+    let sub = if notes == 0 {
+        "This vault is empty. Create your first note to get started.".to_string()
+    } else {
+        format!("{notes} notes in this vault. Pick one on the left, or:")
+    };
+    dom.add(card, El::div().class("empty-state-subtitle").text(sub));
+    let list = dom.add(card, El::div().class("empty-state-action-list"));
+    for (icon, label, cmd) in [
+        ("note-plus", "Create new note", "file-explorer:new-file"),
+        ("switcher", "Go to file", "switcher:open"),
+        ("command", "Open command palette", "command-palette:open"),
+        ("calendar", "Open today's daily note", "daily-notes"),
+        ("graph", "Open graph view", "graph:open"),
+        ("settings", "Open settings", "app:open-settings"),
+        ("vault", "Open another vault", "app:open-vault"),
+    ] {
+        let row = dom.add(list, El::div().class("empty-state-action").action(cmd));
+        dom.add(row, icons::el(icon));
+        dom.add(row, El::div().class("empty-state-action-label").text(label));
+        dom.add(row, El::div().class("empty-state-action-hotkey").text(app.hotkey_for(cmd)));
+    }
+}
+
+/// The application icon as an image, rasterised once.
+pub fn logo() -> rustsidian_ui::Image {
+    static LOGO: std::sync::OnceLock<rustsidian_ui::Image> = std::sync::OnceLock::new();
+    LOGO.get_or_init(|| {
+        const SIZE: u32 = 192;
+        let mut pm = rustsidian_ui::Pixmap::new(SIZE, SIZE).expect("icon size is not zero");
+        let rgba = crate::icon::rgba(SIZE);
+        for (dst, src) in pm.data_mut().as_chunks_mut::<4>().0.iter_mut().zip(rgba.as_chunks::<4>().0) {
+            // The pixmap holds premultiplied color.
+            let a = u32::from(src[3]);
+            dst.copy_from_slice(&[
+                (u32::from(src[0]) * a / 255) as u8,
+                (u32::from(src[1]) * a / 255) as u8,
+                (u32::from(src[2]) * a / 255) as u8,
+                src[3],
+            ]);
+        }
+        rustsidian_ui::Image(std::sync::Arc::new(pm))
+    })
+    .clone()
+}
+
 /// Build the whole window.
 fn graph(g: &crate::graphview::GraphView, dom: &mut Dom, parent: NodeId, info: &mut ViewInfo) {
     let header = dom.add(parent, El::div().class("view-header graph-controls"));
@@ -854,18 +948,23 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
     dom.nodes[0].el.classes.push(if app.dark { "theme-dark" } else { "theme-light" }.to_string());
     let ws = dom.add(0, El::div().class("workspace"));
     let ribbon = dom.add(ws, El::div().class("workspace-ribbon"));
-    for (glyph, cmd, active) in [
-        ("☰", "file-explorer:open", app.left_open && app.panel == Panel::Files),
-        ("⌕", "global-search:open", app.left_open && app.panel == Panel::Search),
-        ("⇄", "switcher:open", false),
-        ("⌘", "command-palette:open", false),
-        ("◐", "theme:toggle-light-dark", false),
-        ("⚙", "app:open-settings", app.settings.is_some()),
-    ] {
-        dom.add(
+    let ribbon_action = |dom: &mut Dom, icon: &str, cmd: &str, active: bool| {
+        let b = dom.add(
             ribbon,
-            El::div().class("side-dock-ribbon-action").class_if(active, "is-active").text(glyph).action(cmd),
+            El::div().class("side-dock-ribbon-action").class_if(active, "is-active").action(cmd),
         );
+        dom.add(b, icons::el(icon));
+    };
+    for (icon, cmd, active) in [
+        ("folder", "file-explorer:open", app.left_open && app.panel == Panel::Files),
+        ("search", "global-search:open", app.left_open && app.panel == Panel::Search),
+        ("switcher", "switcher:open", false),
+        ("command", "command-palette:open", false),
+        ("graph", "graph:open", app.show_graph),
+        ("note-plus", "file-explorer:new-file", false),
+        ("calendar", "daily-notes", false),
+    ] {
+        ribbon_action(&mut dom, icon, cmd, active);
     }
     for r in &app.plugins.ext.reg.ribbon {
         dom.add(
@@ -873,8 +972,21 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
             El::div().class("side-dock-ribbon-action").text(r.icon.clone()).action(r.command.clone()),
         );
     }
-    if app.left_open {
-        let left = dom.add(ws, El::div().class("workspace-split mod-left-split"));
+    dom.add(ribbon, El::div().class("side-dock-ribbon-spacer"));
+    for (icon, cmd, active) in [
+        ("vault", "app:open-vault", false),
+        (if app.dark { "sun" } else { "moon" }, "theme:toggle-light-dark", false),
+        ("settings", "app:open-settings", app.settings.is_some()),
+    ] {
+        ribbon_action(&mut dom, icon, cmd, active);
+    }
+    let left_w = app.anims.toward("left", app.left_open);
+    if left_w > 0.01 {
+        let mut el = El::div().class("workspace-split mod-left-split");
+        if left_w < 1.0 {
+            el = el.style(&format!("width: {:.1}px", 250.0 * left_w));
+        }
+        let left = dom.add(ws, el);
         match app.panel {
             Panel::Files => sidebar_files(app, &mut dom, left, viewport_h),
             Panel::Search => sidebar_search(app, &mut dom, left),
@@ -882,37 +994,39 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
     }
     let root = dom.add(ws, El::div().class("workspace-split mod-root"));
     let tabs = dom.add(root, El::div().class("workspace-tab-header-container"));
+    let tab_header = |dom: &mut Dom, icon: &str, title: &str, dirty, active, focus: String, close: String| {
+        let tab = dom
+            .add(tabs, El::div().class("workspace-tab-header").class_if(active, "is-active").action(focus));
+        dom.add(tab, icons::el(icon).class("workspace-tab-header-inner-icon"));
+        dom.add(tab, El::div().class("workspace-tab-header-inner-title").text(title.to_string()));
+        if dirty {
+            dom.add(tab, icons::el("dot").class("workspace-tab-header-status"));
+        }
+        let x = dom.add(tab, El::div().class("workspace-tab-header-inner-close-button").action(close));
+        dom.add(x, icons::el("x"));
+    };
     for (i, t) in app.tabs.iter().enumerate() {
-        let dirty = if t.editor.buf.is_modified() { " •" } else { "" };
-        dom.add(
-            tabs,
-            El::div()
-                .class("workspace-tab-header")
-                .class_if(i == app.active && !app.show_graph && !app.canvas_active(), "is-active")
-                .text(format!("{}{dirty}", t.title()))
-                .action(format!("tab:{i}")),
+        tab_header(
+            &mut dom,
+            icons::for_file(&t.path),
+            t.title(),
+            t.editor.buf.is_modified(),
+            i == app.active && !app.show_graph && !app.canvas_active(),
+            format!("tab:{i}"),
+            format!("close-tab:{i}"),
         );
     }
     if let Some(g) = &app.graph_view {
-        dom.add(
-            tabs,
-            El::div()
-                .class("workspace-tab-header")
-                .class_if(app.show_graph, "is-active")
-                .text(g.title())
-                .action("graph:focus"),
-        );
+        let (focus, close) = ("graph:focus".to_string(), "graph:close".to_string());
+        tab_header(&mut dom, "graph", &g.title(), false, app.show_graph, focus, close);
     }
     if let Some(c) = &app.canvas_view {
-        dom.add(
-            tabs,
-            El::div()
-                .class("workspace-tab-header")
-                .class_if(app.canvas_active(), "is-active")
-                .text(c.title())
-                .action("canvas:focus"),
-        );
+        let (focus, close) = ("canvas:focus".to_string(), "canvas:close".to_string());
+        tab_header(&mut dom, "canvas", &c.title(), false, app.canvas_active(), focus, close);
     }
+    let new_tab =
+        dom.add(tabs, El::div().class("workspace-tab-header-new-tab").action("file-explorer:new-file"));
+    dom.add(new_tab, icons::el("plus"));
     match &app.graph_view {
         Some(g) if app.show_graph => graph(g, &mut dom, root, &mut info),
         _ if app.canvas_active() => {
@@ -920,11 +1034,26 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
         }
         _ => editor(app, &mut dom, root, &pal, &mut info),
     }
-    if app.right_open {
-        let right = dom.add(ws, El::div().class("workspace-split mod-right-split"));
+    let right_w = app.anims.toward("right", app.right_open);
+    if right_w > 0.01 {
+        let mut el = El::div().class("workspace-split mod-right-split");
+        if right_w < 1.0 {
+            el = el.style(&format!("width: {:.1}px", 250.0 * right_w));
+        }
+        let right = dom.add(ws, el);
         right_sidebar(app, &mut dom, right);
     }
     let status = dom.add(0, El::div().class("status-bar"));
+    // What the element under the pointer does, with its hotkey.
+    let hint = app.hover_action.as_deref().and_then(|a| {
+        let name =
+            crate::shell::COMMANDS.iter().find(|c| c.0 == a).map(|c| c.1.to_string()).or_else(|| {
+                a.strip_prefix("close-tab:").map(|_| "Close tab (middle click also closes)".to_string())
+            })?;
+        let key = app.hotkey_for(a);
+        Some(if key.is_empty() { name } else { format!("{name}  ({key})") })
+    });
+    dom.add(status, El::div().class("status-bar-item status-bar-hint").text(hint.unwrap_or_default()));
     if let Some(t) = app.tab() {
         let words = t.meta.as_ref().map_or(0, |(_, m)| m.words);
         let backlinks = app
@@ -953,13 +1082,30 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
         El::div().class("status-bar-item").text(format!("{} notes", app.store.index.notes().count())),
     );
     if let Some(p) = &app.prompt {
-        let modal = dom.add(0, El::div().class("prompt"));
+        let t = app.anims.t("prompt");
+        let mut el = El::div().class("prompt");
+        if t < 1.0 {
+            el = el.style(&format!("opacity: {t:.3}; top: {:.1}px", 68.0 + 12.0 * t));
+        }
+        let modal = dom.add(0, el);
         let placeholder = match p.kind {
             PromptKind::Commands => "Type a command…",
             PromptKind::Switcher => "Find or create a note…",
+            PromptKind::Rename => "New name…",
+            PromptKind::NewFolder => "Folder name…",
         };
         let shown = if p.query.is_empty() { placeholder.to_string() } else { format!("{}▏", p.query) };
-        dom.add(modal, El::div().class("prompt-input").text(shown));
+        let input = dom.add(modal, El::div().class("prompt-input-container"));
+        dom.add(
+            input,
+            icons::el(match p.kind {
+                PromptKind::Commands => "command",
+                PromptKind::Switcher => "search",
+                PromptKind::Rename => "edit",
+                PromptKind::NewFolder => "folder-plus",
+            }),
+        );
+        dom.add(input, El::div().class("prompt-input").text(shown));
         let results = dom.add(modal, El::div().class("prompt-results"));
         for (i, item) in p.items.iter().enumerate() {
             let row = dom.add(
@@ -974,8 +1120,45 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
         }
     }
     crate::settings::modal(app, &mut dom);
+    if let Some(m) = &app.menu {
+        // Open toward the inside of the window when there is no room at the pointer.
+        let x =
+            if m.x + crate::menu::WIDTH > app.window_w { (m.x - crate::menu::WIDTH).max(0.0) } else { m.x };
+        let y = if m.y + m.height() > viewport_h { (viewport_h - m.height()).max(0.0) } else { m.y };
+        let t = app.anims.t("menu");
+        let el = El::div().class("menu").style(&format!(
+            "left: {x:.1}px; top: {:.1}px; width: {:.0}px; opacity: {t:.3}",
+            y - 4.0 * (1.0 - t),
+            crate::menu::WIDTH
+        ));
+        let menu = dom.add(0, el);
+        for (i, item) in m.items.iter().enumerate() {
+            if item.action.is_empty() {
+                dom.add(menu, El::div().class("menu-separator"));
+                continue;
+            }
+            let row = dom.add(
+                menu,
+                El::div()
+                    .class("menu-item")
+                    .class_if(m.selected == Some(i), "is-selected")
+                    .class_if(item.warning, "is-warning")
+                    .action(format!("menu:{i}")),
+            );
+            dom.add(row, icons::el(item.icon));
+            dom.add(row, El::div().class("menu-item-title").text(item.label.clone()));
+            if !item.hotkey.is_empty() {
+                dom.add(row, El::div().class("menu-item-hotkey").text(item.hotkey.clone()));
+            }
+        }
+    }
     if let Some(n) = &app.notice {
-        dom.add(0, El::div().class("notice").text(n.clone()));
+        let t = app.anims.t("notice");
+        let mut el = El::div().class("notice").text(n.clone());
+        if t < 1.0 {
+            el = el.style(&format!("opacity: {t:.3}; top: {:.1}px", 12.0 * t));
+        }
+        dom.add(0, el);
     }
     if app.perf {
         dom.add(
@@ -992,6 +1175,7 @@ pub fn build(app: &App, viewport_h: f32) -> (Dom, ViewInfo) {
             dom.nodes[n].scroll_y = *y;
         }
     }
+    mark_hover(&mut dom, app.hover_action.as_deref());
     (dom, info)
 }
 

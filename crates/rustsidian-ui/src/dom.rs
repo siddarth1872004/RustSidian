@@ -378,18 +378,32 @@ impl Dom {
     /// Compute styles for every node (parents before children).
     pub fn style(&mut self, theme: &Theme, env: Env) {
         let root_font = 16.0;
+        // The cascade is the costly part, and many nodes repeat one (rows, icons, labels).
+        // Nodes whose parents are styled alike and that match the same rules with the same
+        // inline style get the same result, so it is computed once per such group.
+        type Key = (usize, Vec<(u16, u32, u32)>, Option<String>);
+        let mut groups: std::collections::HashMap<Key, NodeId> = std::collections::HashMap::new();
+        let mut group_of = vec![0; self.nodes.len()];
         for id in 0..self.nodes.len() {
             let parent = self.nodes[id].parent;
             let classes: Vec<&str> = self.nodes[id].el.classes.iter().map(String::as_str).collect();
-            let computed = theme.compute(
-                &ElRef(self, id),
-                &classes,
-                env,
-                parent.map(|p| &self.nodes[p].computed),
-                self.nodes[id].el.inline_style.as_deref(),
-            );
+            let rules = theme.matched_rules(&ElRef(self, id), &classes, env);
+            let key =
+                (parent.map_or(usize::MAX, |p| group_of[p]), rules, self.nodes[id].el.inline_style.clone());
+            if let Some(&same) = groups.get(&key) {
+                group_of[id] = same;
+                let (computed, style) = (self.nodes[same].computed.clone(), self.nodes[same].style.clone());
+                let n = &mut self.nodes[id];
+                n.computed = computed;
+                n.style = style;
+                continue;
+            }
+            let computed =
+                theme.compute_matched(&key.1, parent.map(|p| &self.nodes[p].computed), key.2.as_deref());
             let parent_font = parent.map_or(root_font, |p| self.nodes[p].style.text.size);
             let style = Style::from_computed(&computed, parent_font, root_font);
+            group_of[id] = id;
+            groups.insert(key, id);
             let n = &mut self.nodes[id];
             n.computed = computed;
             n.style = style;

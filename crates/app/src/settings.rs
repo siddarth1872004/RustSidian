@@ -706,8 +706,15 @@ fn about_view(app: &App, dom: &mut Dom, parent: NodeId) {
 /// The settings window, drawn over everything else.
 pub fn modal(app: &App, dom: &mut Dom) {
     let Some(ui) = &app.settings else { return };
-    let backdrop = dom.add(0, El::div().class("modal-container mod-dim").action("settings:close"));
-    let modal = dom.add(backdrop, El::div().class("modal mod-settings").action("settings:noop"));
+    let t = app.anims.t("settings");
+    let mut backdrop = El::div().class("modal-container mod-dim").action("settings:close");
+    let mut modal = El::div().class("modal mod-settings").action("settings:noop");
+    if t < 1.0 {
+        backdrop = backdrop.style(&format!("opacity: {t:.3}"));
+        modal = modal.style(&format!("margin-top: {:.1}px", 14.0 * (1.0 - t)));
+    }
+    let backdrop = dom.add(0, backdrop);
+    let modal = dom.add(backdrop, modal);
     let tabs = dom.add(modal, El::div().class("vertical-tab-header"));
     dom.add(tabs, El::div().class("vertical-tab-header-group-title").text("Options"));
     for (sec, slug, name) in SECTIONS {

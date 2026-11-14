@@ -99,8 +99,16 @@ pub const COMMANDS: &[(&str, &str, &str)] = &[
     ("global-search:open", "Search: Search in all files", "Ctrl+Shift+F"),
     ("file-explorer:open", "Files: Show file explorer", ""),
     ("file-explorer:new-file", "Create new note", "Ctrl+N"),
+    ("file-explorer:new-folder", "Create new folder", ""),
+    ("workspace:edit-file-title", "Rename file", "F2"),
+    ("workspace:copy-path", "Copy file path", ""),
+    ("file-explorer:reveal-active-file", "Reveal current file in navigation", ""),
+    ("file-explorer:collapse-all", "Files: Collapse or expand all folders", ""),
     ("editor:save-file", "Save current file", "Ctrl+S"),
     ("workspace:close", "Close current tab", "Ctrl+W"),
+    ("workspace:close-others", "Close all other tabs", ""),
+    ("workspace:close-all", "Close all tabs", ""),
+    ("workspace:undo-close-pane", "Reopen closed tab", "Ctrl+Shift+T"),
     ("workspace:next-tab", "Go to next tab", "Ctrl+Tab"),
     ("workspace:previous-tab", "Go to previous tab", "Ctrl+Shift+Tab"),
     ("app:go-back", "Navigate back", "Ctrl+Alt+ArrowLeft"),
@@ -120,6 +128,10 @@ pub const COMMANDS: &[(&str, &str, &str)] = &[
     ("editor:set-heading-1", "Set as heading 1", ""),
     ("editor:set-heading-2", "Set as heading 2", ""),
     ("editor:set-heading-3", "Set as heading 3", ""),
+    ("editor:cut", "Cut", "Ctrl+X"),
+    ("editor:copy", "Copy", "Ctrl+C"),
+    ("editor:paste", "Paste", "Ctrl+V"),
+    ("editor:insert-wikilink", "Add internal link", ""),
     ("editor:undo", "Undo", "Ctrl+Z"),
     ("editor:redo", "Redo", "Ctrl+Shift+Z"),
     ("editor:select-all", "Select all", "Ctrl+A"),
@@ -176,6 +188,7 @@ pub const COMMANDS: &[(&str, &str, &str)] = &[
     ("properties:toggle-source", "Toggle properties in document: table/source", ""),
     ("plugins:list", "Plugins: List plugins and scripts", ""),
     ("plugins:reload", "Plugins: Reload plugins", ""),
+    ("app:open-vault", "Open another vault", ""),
     ("app:quit", "Quit", "Ctrl+Q"),
 ];
 
@@ -203,6 +216,10 @@ pub enum Focus {
 pub enum PromptKind {
     Commands,
     Switcher,
+    /// A new name for the file or folder in `Prompt::target`.
+    Rename,
+    /// The name of a new folder inside `Prompt::target`.
+    NewFolder,
 }
 
 #[derive(Clone, Debug)]
@@ -214,6 +231,8 @@ pub struct PromptItem {
 
 pub struct Prompt {
     pub kind: PromptKind,
+    /// The path a rename or new-folder prompt acts on.
+    pub target: String,
     pub query: String,
     pub selected: usize,
     pub items: Vec<PromptItem>,
@@ -298,7 +317,7 @@ pub struct App {
     pub search_error: Option<String>,
     corpus: Option<Corpus>,
     graph: Option<std::sync::Arc<vault_core::LinkGraph>>,
-    tree: Option<Vec<TreeRow>>,
+    pub(crate) tree: Option<Vec<TreeRow>>,
     /// While set, the link graph is not computed (the first frame is presented without it).
     pub defer_graph: bool,
     pub keymap: Vec<(Vec<Key>, String)>,
@@ -314,6 +333,23 @@ pub struct App {
     fuzzy: Fuzzy,
     recovery: Recovery,
     pub plugins: crate::plugins::PluginState,
+    /// The action of the element under the pointer, for `:hover` styling and the status hint.
+    pub hover_action: Option<String>,
+    pub anims: crate::anim::Anims,
+    pub(crate) seen: Option<crate::anim::Seen>,
+    pub(crate) notice_since: Option<std::time::Instant>,
+    /// Paths of closed tabs, most recent last, for "Reopen closed tab".
+    closed_tabs: Vec<String>,
+    /// Set by "Open another vault"; the window shows the vault chooser when it sees this.
+    pub switch_vault: bool,
+    /// The open right-click menu.
+    pub menu: Option<crate::menu::Menu>,
+    /// Logical window width of the last frame, to keep menus on screen.
+    pub window_w: f32,
+    /// Off in headless use (tests, screenshots) so they never touch the user's clipboard;
+    /// copies then stay inside the application.
+    pub system_clipboard: bool,
+    pub(crate) clip: String,
 }
 
 /// Sort key for explorer order: at each level folders come before files, and names compare
@@ -434,6 +470,16 @@ impl App {
             scrolls: HashMap::new(),
             fuzzy: Fuzzy::new(),
             plugins: Default::default(),
+            hover_action: None,
+            anims: Default::default(),
+            seen: None,
+            notice_since: None,
+            closed_tabs: Vec::new(),
+            switch_vault: false,
+            menu: None,
+            window_w: 1280.0,
+            system_clipboard: false,
+            clip: String::new(),
         })
     }
 
@@ -638,6 +684,21 @@ impl App {
         }
     }
 
+    /// Close one tab, saving it first. The tab stays open when the save fails.
+    pub fn close_tab(&mut self, i: usize) {
+        if i >= self.tabs.len() {
+            return;
+        }
+        let prev = self.active;
+        self.active = i;
+        if !self.save() {
+            return;
+        }
+        let tab = self.tabs.remove(i);
+        self.closed_tabs.push(tab.path);
+        self.active = if prev > i { prev - 1 } else { prev.min(self.tabs.len().saturating_sub(1)) };
+    }
+
     /// Save every modified tab (called when the window loses focus, on a timer, and on quit).
     pub fn save_all(&mut self) {
         self.canvas_save();
@@ -703,7 +764,7 @@ impl App {
 
     // ---- prompt (palette, switcher) ----
 
-    fn refresh_prompt(&mut self) {
+    pub(crate) fn refresh_prompt(&mut self) {
         let Some(kind) = self.prompt.as_ref().map(|p| p.kind) else { return };
         let query = self.prompt.as_ref().map(|p| p.query.clone()).unwrap_or_default();
         let items: Vec<PromptItem> = match kind {
@@ -763,6 +824,29 @@ impl App {
                 }
                 items
             }
+            PromptKind::Rename | PromptKind::NewFolder => {
+                let target = self.prompt.as_ref().map(|p| p.target.clone()).unwrap_or_default();
+                let name = query.trim();
+                if name.is_empty() {
+                    Vec::new()
+                } else if kind == PromptKind::Rename {
+                    vec![PromptItem {
+                        label: format!("Rename to \u{201c}{name}\u{201d}"),
+                        aux: "Enter".into(),
+                        action: format!("rename:{target}|{name}"),
+                    }]
+                } else {
+                    vec![PromptItem {
+                        label: format!("Create folder \u{201c}{name}\u{201d}"),
+                        aux: if target.is_empty() {
+                            "in the vault root".into()
+                        } else {
+                            format!("in {target}")
+                        },
+                        action: format!("mkdir:{target}|{name}"),
+                    }]
+                }
+            }
         };
         if let Some(p) = &mut self.prompt {
             p.items = items;
@@ -771,8 +855,25 @@ impl App {
     }
 
     fn open_prompt(&mut self, kind: PromptKind) {
-        self.prompt = Some(Prompt { kind, query: String::new(), selected: 0, items: Vec::new() });
+        self.prompt = Some(Prompt {
+            kind,
+            target: String::new(),
+            query: String::new(),
+            selected: 0,
+            items: Vec::new(),
+        });
         self.focus = Focus::Prompt;
+        self.refresh_prompt();
+    }
+
+    /// Ask for a name, for a rename (`target` is the file or folder) or a new folder (`target`
+    /// is the parent folder).
+    pub(crate) fn open_name_prompt(&mut self, kind: PromptKind, target: &str, initial: &str) {
+        self.open_prompt(kind);
+        if let Some(p) = &mut self.prompt {
+            p.target = target.to_string();
+            p.query = initial.to_string();
+        }
         self.refresh_prompt();
     }
 
@@ -849,6 +950,9 @@ impl App {
             }
             return;
         }
+        if let Some(i) = command.strip_prefix("close-tab:").and_then(|i| i.parse::<usize>().ok()) {
+            return self.close_tab(i);
+        }
         if let Some(folder) = command.strip_prefix("toggle-folder:") {
             if !self.collapsed.remove(folder) {
                 self.collapsed.insert(folder.to_string());
@@ -866,6 +970,11 @@ impl App {
             self.focus = Focus::Search;
             return;
         }
+        // Pasting into an open prompt types into its query rather than closing it.
+        if command == "editor:paste" && self.prompt.is_some() {
+            self.run_file_action(command);
+            return;
+        }
         if self.prompt.is_some() && command != "command-palette:open" && command != "switcher:open" {
             self.close_prompt();
         }
@@ -873,6 +982,9 @@ impl App {
             return;
         }
         if self.run_plugin_command(command) {
+            return;
+        }
+        if self.run_file_action(command) {
             return;
         }
         let wrap = |app: &mut App, marker: &str| {
@@ -905,20 +1017,56 @@ impl App {
                     self.notice = None;
                 }
             }
-            "workspace:close" if self.show_graph => {
+            "workspace:close" | "graph:close" if self.show_graph || command == "graph:close" => {
                 self.graph_view = None;
                 self.show_graph = false;
             }
-            "workspace:close" if self.canvas_active() => {
+            "workspace:close" | "canvas:close" if self.canvas_active() || command == "canvas:close" => {
                 self.canvas_save();
                 self.canvas_view = None;
                 self.show_canvas = false;
             }
-            "workspace:close" => {
-                if self.save() && self.active < self.tabs.len() {
-                    self.tabs.remove(self.active);
-                    self.active = self.active.min(self.tabs.len().saturating_sub(1));
+            "workspace:close" => self.close_tab(self.active),
+            "workspace:close-others" => {
+                for i in (0..self.tabs.len()).rev().filter(|&i| i != self.active).collect::<Vec<_>>() {
+                    self.close_tab(i);
                 }
+            }
+            "workspace:close-all" => {
+                for i in (0..self.tabs.len()).rev() {
+                    self.close_tab(i);
+                }
+            }
+            "workspace:undo-close-pane" => {
+                while let Some(p) = self.closed_tabs.pop() {
+                    if self.store.index.id(&p).is_some() {
+                        self.open_note(&p);
+                        break;
+                    }
+                }
+            }
+            "file-explorer:collapse-all" => {
+                let folders: HashSet<String> = self
+                    .store
+                    .index
+                    .iter()
+                    .flat_map(|(_, f)| {
+                        let dir = path::parent(&f.path);
+                        dir.match_indices('/')
+                            .map(|(i, _)| dir[..i].to_string())
+                            .chain((!dir.is_empty()).then(|| dir.to_string()))
+                            .collect::<Vec<_>>()
+                    })
+                    .collect();
+                if folders.iter().all(|f| self.collapsed.contains(f)) {
+                    self.collapsed.clear();
+                } else {
+                    self.collapsed = folders;
+                }
+            }
+            "app:open-vault" => {
+                self.save_all();
+                self.switch_vault = true;
             }
             "workspace:next-tab" | "workspace:previous-tab" if self.show_graph => self.show_graph = false,
             "workspace:next-tab" | "workspace:previous-tab" if self.canvas_active() => {
@@ -1050,18 +1198,23 @@ impl App {
         }
     }
 
-    fn follow_link(&mut self) {
-        let Some(t) = self.tab() else { return };
+    /// The target of the link the cursor is in, if any.
+    pub(crate) fn link_under_cursor(&self) -> Option<String> {
+        let t = self.tab()?;
         let head = t.editor.buf.sels[0].head as u32;
         let meta = vault_core::meta::extract(&t.editor.buf.text());
-        let Some(link) = meta.links.iter().find(|l| l.start <= head && head <= l.end) else { return };
-        match self.store.index.resolve(&link.target, &t.path) {
+        meta.links.iter().find(|l| l.start <= head && head <= l.end).map(|l| l.target.to_string())
+    }
+
+    fn follow_link(&mut self) {
+        let Some(target) = self.link_under_cursor() else { return };
+        let Some(t) = self.tab() else { return };
+        match self.store.index.resolve(&target, &t.path) {
             Some(id) => {
                 let p = self.store.index.entry(id).map(|f| f.path.to_string()).unwrap_or_default();
                 self.open_note(&p);
             }
             None => {
-                let target = link.target.to_string();
                 self.run(&format!("create:{target}"));
             }
         }
@@ -1072,6 +1225,9 @@ impl App {
     /// Handle a key press. Returns true if it was consumed.
     pub fn key(&mut self, key: Key) -> bool {
         self.notice = None;
+        if let Some(r) = self.menu_key(&key) {
+            return r;
+        }
         if let Some(r) = self.modal_key(&key) {
             return r;
         }
@@ -1224,6 +1380,7 @@ impl App {
         if text.is_empty() || text.chars().any(char::is_control) {
             return;
         }
+        self.menu = None;
         if self.modal_text(text) {
             return;
         }

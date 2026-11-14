@@ -8,3 +8,11 @@ multiple-versions = "warn"
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
+
+[advisories]
+ignore = [
+    # smartstring is unmaintained; it comes in through rhai (user scripts), which has no release without it.
+    { id = "RUSTSEC-2026-0249", reason = "transitive via rhai, no maintained alternative release" },
+    # ttf-parser is unmaintained; it comes in through tiny-skia and fontdb, the text and raster stack.
+    { id = "RUSTSEC-2026-0192", reason = "transitive via tiny-skia/fontdb, no maintained alternative release" },
+]

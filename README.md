@@ -131,7 +131,7 @@ Caveats, stated plainly:
 
 | Feature | Status | Notes |
 |---|---|---|
-| File explorer | partial | Virtualised, collapsible; no sorting options, drag-rearrange, rename or context menu |
+| File explorer | partial | Virtualised, collapsible, file icons; right-click menus for files, folders, tabs and the editor (new note/folder, rename with link updates, make a copy, delete to trash, copy path or link, show in system explorer, cut/copy/paste). No sorting options or drag-rearrange |
 | Quick switcher, command palette | done | |
 | Search panel with Obsidian operators | done | All operators; no embedded `query` blocks |
 | Back/forward, tabs | done | No split panes, stacked or pinned tabs, pop-out windows, linked panes, workspaces |

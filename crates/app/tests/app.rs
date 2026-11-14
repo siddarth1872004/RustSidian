@@ -198,7 +198,7 @@ fn cli_commands() {
         let args: Vec<String> = args.iter().map(|s| s.to_string()).collect();
         let code = match run(&args, &mut out) {
             Outcome::Exit(c) => c,
-            Outcome::Open { .. } => -1,
+            Outcome::Open { .. } | Outcome::Welcome => -1,
         };
         (code, String::from_utf8(out).unwrap())
     };

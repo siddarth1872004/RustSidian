@@ -24,9 +24,18 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
       - run: cargo build --release -p rustsidian
-      - name: Performance budgets (exits non-zero when a budget is missed)
+      # The budgets are a gate on Linux. Windows and macOS runners vary too much from run to
+      # run for a hard gate, so there the numbers are reported in the job summary only.
+      - name: Performance budgets
         shell: bash
-        run: cargo run --release -p rustsidian --example perf_budget -- --dir "$RUNNER_TEMP/perf-vaults" --sizes 1000,10000,50000
+        run: |
+          set +e
+          flag=""
+          [ "$RUNNER_OS" != "Linux" ] && flag="--report-only"
+          cargo run --release -p rustsidian --example perf_budget -- --dir "$RUNNER_TEMP/perf-vaults" --sizes 1000,10000,50000 $flag > perf.md
+          status=$?
+          cat perf.md | tee -a "$GITHUB_STEP_SUMMARY"
+          exit $status
       - name: Binary size gate (15 MB)
         shell: bash
         run: |

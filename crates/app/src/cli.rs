@@ -10,12 +10,14 @@ use vault_core::{path, VaultStore};
 pub const USAGE: &str = "Rustsidian
 
 USAGE:
+  rustsidian                                    Show the welcome screen to pick or create a vault
   rustsidian [open] <vault> [note]              Open a vault in a window
   rustsidian index <vault>                      Build or refresh the index and print statistics
   rustsidian search <vault> <query> [--limit N] Search with Obsidian query syntax
   rustsidian export <vault> <note> [--format html|md] [-o <path>]
   rustsidian doctor <vault>                     Diagnose configuration, index and notes
   rustsidian screenshot <vault> <out.png> [--note <path>] [--size WxH] [--keys \"Ctrl+P ...\"] [--type <text>] [--run <command id>,...] [--light]
+  rustsidian welcome-screenshot <out.png> [--run <action>,...] [--type <text>]
   rustsidian commands                           List command ids and default hotkeys
 
 OPTIONS:
@@ -57,6 +59,8 @@ impl Args {
 pub enum Outcome {
     /// Finished; exit with this code.
     Exit(i32),
+    /// No vault was named: show the welcome screen to pick one.
+    Welcome,
     /// Open a window on this vault, optionally with a note.
     Open { vault: PathBuf, note: Option<String>, profile: bool },
 }
@@ -70,6 +74,9 @@ fn fail(msg: &str) -> Outcome {
 pub fn run(args: &[String], out: &mut dyn std::io::Write) -> Outcome {
     let a = parse_args(args);
     let Some(first) = a.pos.first().map(String::as_str) else {
+        if !a.flag("--help") && cfg!(feature = "window") {
+            return Outcome::Welcome;
+        }
         let _ = writeln!(out, "{USAGE}");
         return Outcome::Exit(if a.flag("--help") { 0 } else { 2 });
     };
@@ -206,6 +213,28 @@ pub fn run(args: &[String], out: &mut dyn std::io::Write) -> Outcome {
                     Outcome::Exit(0)
                 }
                 Err(e) => fail(&format!("screenshot: {e}")),
+            }
+        }
+        "welcome-screenshot" => {
+            let Some(png) = a.pos.get(1) else { return fail("welcome-screenshot: expected <out.png>") };
+            let mut w = crate::welcome::Welcome::new();
+            for c in a.value("--run").unwrap_or("").split(',').filter(|c| !c.is_empty()) {
+                w.run(c.trim());
+            }
+            if let Some(t) = a.value("--type") {
+                w.text_input(t);
+            }
+            let mut fonts = rustsidian_ui::Fonts::new();
+            let Some(mut pm) = rustsidian_ui::Pixmap::new(1280, 800) else {
+                return fail("welcome-screenshot: bad size");
+            };
+            w.render(&mut fonts, &mut pm, 1.0);
+            match pm.save_png(png) {
+                Ok(()) => {
+                    let _ = writeln!(out, "wrote {png}");
+                    Outcome::Exit(0)
+                }
+                Err(e) => fail(&format!("welcome-screenshot: {e}")),
             }
         }
         "open" => match vault_arg(1) {
