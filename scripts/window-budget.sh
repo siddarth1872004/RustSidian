@@ -6,21 +6,23 @@ set -u
 DIR=${1:?vault dir}
 BIN=${2:-target/release/rustsidian}
 fail=0
+# A missed budget becomes a CI annotation, so it is visible without opening the job log.
+miss() { echo "::error::over budget: $*"; fail=1; }
 
 size=$(stat -c %s "$BIN")
 echo "binary size: $((size / 1024)) KiB (budget 15360 KiB)"
-[ "$size" -le $((15 * 1024 * 1024)) ] || fail=1
+[ "$size" -le $((15 * 1024 * 1024)) ] || miss "binary size $((size / 1024)) KiB"
 
 start() { # vault budget_ms
   local worst=0
   for _ in 1 2 3 4 5; do
     timeout 6 "$BIN" "$1" "Note 42" --profile >/dev/null 2>"$DIR/.profile.log"
     ms=$(grep -o 'first frame presented [0-9.]*ms' "$DIR/.profile.log" | grep -o '[0-9.]*' | head -1)
-    [ -n "$ms" ] || { echo "no frame presented for $1 (no display?)"; return 2; }
+    [ -n "$ms" ] || { miss "no frame presented for $1 (no display?)"; return 2; }
     worst=$(awk -v a="$worst" -v b="$ms" 'BEGIN { print (b > a) ? b : a }')
   done
   echo "cold start to first frame, $(basename "$1"): worst of 5 = ${worst} ms (budget $2 ms)"
-  awk -v w="$worst" -v b="$2" 'BEGIN { exit !(w <= b) }' || fail=1
+  awk -v w="$worst" -v b="$2" 'BEGIN { exit !(w <= b) }' || miss "cold start $(basename "$1") ${worst} ms > $2 ms"
 }
 start "$DIR/vault-5000" 150
 start "$DIR/vault-50000" 400
@@ -34,7 +36,7 @@ sleep 5
 t1=$(awk '{ print $14 + $15 }' /proc/$pid/stat)
 kill $pid
 echo "idle RSS, 10,000 notes: $((rss / 1024)) MiB (budget 80 MiB)"
-[ "$rss" -le $((80 * 1024)) ] || fail=1
+[ "$rss" -le $((80 * 1024)) ] || miss "idle RSS $((rss / 1024)) MiB"
 echo "idle CPU over 5 s: $((t1 - t0)) ticks (budget 0)"
-[ $((t1 - t0)) -eq 0 ] || fail=1
+[ $((t1 - t0)) -eq 0 ] || miss "idle CPU $((t1 - t0)) ticks"
 exit $fail
