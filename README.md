@@ -30,9 +30,11 @@ Windows also passes clippy, but **neither has been built, linked or run**.
 
 Release archives (Linux x86_64, Windows x86_64, macOS arm64 and x86_64, with SHA256SUMS.txt) are
 built by `.github/workflows/release.yml` when a `v*` tag is pushed and attached to the GitHub
-Release. No release has been published yet. On Linux, `packaging/rustsidian.desktop` and
+Release (see the Releases page). On Linux, `packaging/rustsidian.desktop` and
 `packaging/rustsidian.svg` can be copied to `~/.local/share/applications` and
-`~/.local/share/icons/hicolor/scalable/apps`.
+`~/.local/share/icons/hicolor/scalable/apps`. Under X11 the window needs `libxkbcommon-x11`
+(`sudo apt install libxkbcommon-x11-0` on Debian and Ubuntu); Wayland sessions need `libxkbcommon`.
+Copy and paste on Linux use `wl-clipboard`, `xclip` or `xsel`, whichever is installed.
 
 ## Build from source
 

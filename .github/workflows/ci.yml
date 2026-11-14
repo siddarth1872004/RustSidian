@@ -58,7 +58,7 @@ jobs:
           PROPTEST_CASES: 20000
       - name: Window budgets under a virtual display (cold start, idle RAM, idle CPU)
         run: |
-          sudo apt-get update && sudo apt-get install -y xvfb
+          sudo apt-get update && sudo apt-get install -y xvfb libxkbcommon-x11-0
           cargo build --release -p rustsidian
           cargo run --release -p rustsidian --example perf_budget -- --dir "$RUNNER_TEMP/v" --sizes 5000,10000,50000 --report-only
           xvfb-run -a scripts/window-budget.sh "$RUNNER_TEMP/v"
